@@ -1,26 +1,9 @@
 # Patch definition for no-nag
 # Source: proxmox-widget-toolkit/src/node/APTRepositories.js
 
-_PD_DISP_="Common 'no-subscription' repos line highlight"
+DISPLAY="Common 'no-subscription' repos line highlight"
 
-_PD_PKG_="proxmox-widget-toolkit"
+PACKAGE="proxmox-widget-toolkit"
+SINCE="3.2-1|4.3.12"
 
-_PD_TGT_="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"
-
-raw _PD_ORIG_ << 'EOF'
-                    if (components[0].match(/\w+(-no-subscription|test)\s*$/i)) {
-                        metaData.tdCls = 'proxmox-warning-row';
-                        err = '<i class="fa fa-fw warning fa-exclamation-circle"></i> ';
-
-                        let qtip = components[0].match(/no-subscription/)
-                            ? gettext('The no-subscription repository is NOT production-ready')
-                            : gettext('The test repository may contain unstable updates');
-EOF
-
-raw _PD_REPL_ << 'EOF'
-                    if (components[0].match(/\w+(test)\s*$/i)) {
-                        metaData.tdCls = 'proxmox-warning-row';
-                        err = '<i class="fa fa-fw warning fa-exclamation-circle"></i> ';
-
-                        let qtip = gettext('The test repository may contain unstable updates');
-EOF
+TARGET="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"

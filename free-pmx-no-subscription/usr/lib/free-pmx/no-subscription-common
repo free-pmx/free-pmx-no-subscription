@@ -1,53 +1,51 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
+source "/usr/lib/free-pmx/no-subscription-util" 2> /dev/null \
+|| { echo "Internal error, aborting." >&2; exit 1; }
+
 declare_common() {
 
       declare -rg NS_CONFIG="/etc/free-pmx/no-subscription.conf"
 
 }
 
-declare_apt_lists() {
+declare_aptsrcs() {
 
-      declare -rg ORD_LIST_IDS=("pve" "pbs" "pmg" "ceph")
+      declare -rg ORD_APTSRC_IDS=("pve" "pbs" "pmg" "ceph")
+
+      declare -A os_release
+      source_kv "/etc/os-release" os_release VERSION_ID VERSION_CODENAME \
+      && check_kv_allset os_release VERSION_ID VERSION_CODENAME \
+      || return 1
+
+      [[ ${os_release[VERSION_ID]} =~ ^[0-9]+$ ]] || return 1
+      declare -r formats=(sources list)
+      declare -rg APTSRC_FORMAT="${formats[(( os_release[VERSION_ID] < 13 ))]}"
 
       declare -r list_d="/etc/apt/sources.list.d"
 
-      declare -rgA APT_LISTS=(
-            ["pve"]="$list_d/pve-enterprise.list"
-            ["pbs"]="$list_d/pbs-enterprise.list"
-            ["pmg"]="$list_d/pmg-enterprise.list"
-            ["ceph"]="$list_d/ceph.list"
+      declare -rgA APTSRC_TARGETS=(
+            ["pve"]="$list_d/pve-enterprise.$APTSRC_FORMAT"
+            ["pbs"]="$list_d/pbs-enterprise.$APTSRC_FORMAT"
+            ["pmg"]="$list_d/pmg-enterprise.$APTSRC_FORMAT"
+            ["ceph"]="$list_d/ceph.$APTSRC_FORMAT"
       )
 
-      declare -rgA APT_LISTS_NEW=(
-            ["pve"]="$list_d/pve-no-subscription.list"
-            ["pbs"]="$list_d/pbs-no-subscription.list"
-            ["pmg"]="$list_d/pmg-no-subscription.list"            
-            ["ceph"]="$list_d/ceph-no-subscription.list"
+      declare -r templ_d="/usr/share/free-pmx/no-subscription-aptsrcs"
+
+      declare -rgA APTSRC_TEMPLS=(
+            ["pve"]="$templ_d/pve-no-subscription.$APTSRC_FORMAT.template"
+            ["pbs"]="$templ_d/pbs-no-subscription.$APTSRC_FORMAT.template"
+            ["pmg"]="$templ_d/pmg-no-subscription.$APTSRC_FORMAT.template"
+            ["ceph"]="$templ_d/ceph-no-subscription.$APTSRC_FORMAT.template"
       )
 
-}
+      declare -rgx FREE_PMX_DEBIAN="${os_release[VERSION_CODENAME]}"
+      declare -rgx FREE_PMX_CEPH
 
-declare_ns_repos() {
-
-      declare -i err=0
-
-      DEBIAN=$( source "/etc/os-release" 2> /dev/null ||:; echo "$VERSION_CODENAME"; )
-      [[ -z $DEBIAN ]] && { echo "Could not determine Debian version codename."; return $(( err | 1 )); }
-
-      [[ -z $FREE_PMX_CEPH ]] && err=$(( err | 2 ))
-
-      declare -rgA NS_REPOS=(
-            ["pve"]="deb http://download.proxmox.com/debian/pve $DEBIAN pve-no-subscription"
-            ["pbs"]="deb http://download.proxmox.com/debian/pbs $DEBIAN pbs-no-subscription"
-            ["pmg"]="deb http://download.proxmox.com/debian/pmg $DEBIAN pmg-no-subscription"
-            ["ceph"]="deb http://download.proxmox.com/debian/ceph-$FREE_PMX_CEPH $DEBIAN no-subscription"
-      )
-
-      declare -rg REPOS_KEY_LOCAL="/etc/apt/trusted.gpg.d/proxmox-release-$DEBIAN.gpg"
-      declare -rg REPOS_KEY_ORIGIN="https://enterprise.proxmox.com/debian/proxmox-release-$DEBIAN.gpg"
-
-      return $err
+      declare -rgx FREE_PMX_APTKEY_SHARE="/usr/share/keyrings/proxmox-archive-keyring.gpg"
+      declare -rgx FREE_PMX_APTKEY_LOCAL="/etc/apt/keyrings/proxmox-release-$FREE_PMX_DEBIAN.gpg"
+      declare -rgx FREE_PMX_APTKEY_ORIGIN="https://enterprise.proxmox.com/debian/proxmox-release-$FREE_PMX_DEBIAN.gpg"
 
 }
 
@@ -58,6 +56,7 @@ declare_patchdefs() {
       declare -rga AVAIL_PATCH_TARGETS=(
             "/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"
             "/usr/share/pve-manager/js/pvemanagerlib.js"
+            "/usr/share/pve-manager/touch/pvemanager-mobile.js"
             "/usr/share/javascript/proxmox-backup/js/proxmox-backup-gui.js"
             "/usr/share/javascript/pmg-gui/js/pmgmanagerlib.js"
       )
@@ -68,21 +67,19 @@ declare_patchdefs() {
       declare -gA PATCHDEF_TARGETS
 
       for p in "${PATCHDEF_DIR}/"*.patchdef; do
-            unset _PD_TGT_
-            raw() { return; }
-            source "$p" 2> /dev/null || { err=$(( err | 1 )); continue; }
-            unset raw
-            [ -z "$_PD_TGT_" ] && { err=$(( err | 2 )); continue; }
+            declare -A pd
+            source_kv "$p" pd TARGET || { err=$(( err | 1 )); continue; }
+            [ -z "${pd[TARGET]}" ] && { err=$(( err | 2 )); continue; }
 
             if [[ "$p" =~ ^${PATCHDEF_DIR}/(.*)\.patchdef ]]; then            
                   declare m=${BASH_REMATCH[1]}
                   ORD_PATCHDEF_IDS+=("$m")
-                  PATCHDEF_TARGETS["$m"]="$_PD_TGT_" 
+                  PATCHDEF_TARGETS["$m"]="${pd[TARGET]}" 
             fi
       done
 
-      declare -r ORD_PATCHDEF_IDS
-      declare -r PATCHDEF_TARGETS
+      declare -rg ORD_PATCHDEF_IDS
+      declare -rg PATCHDEF_TARGETS
 
       return $err
 
@@ -132,9 +129,9 @@ init() {
 
       { shift $((OPTIND-1)); while (($# > 0)); do ARGS+=("$1"); shift; done; }
 
-      declare -r O_AUTORUN
-      declare -r O_TARGET
-      declare -r ARGS
+      declare -rg O_AUTORUN
+      declare -rg O_TARGET
+      declare -rg ARGS
 
 }
 

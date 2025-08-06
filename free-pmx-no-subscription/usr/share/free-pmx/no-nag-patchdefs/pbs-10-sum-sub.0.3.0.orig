@@ -1,0 +1,29 @@
+	switch (status) {
+	    case 2:
+		icon = 'check good';
+		message = gettext('Your subscription status is valid.');
+		break;
+	    case 1:
+		icon = 'exclamation-triangle warning';
+		message = gettext('Warning: Your subscription levels are not the same.');
+		break;
+	    case 0:
+		icon = 'times-circle critical';
+		message = `<h1>${gettext('No valid subscription')}</h1>${PBS.Utils.noSubKeyHtml}`;
+		break;
+	    default:
+		throw 'invalid subscription status';
+	}
+	me.getComponent('icon').update({ icon });
+	me.getComponent('message').update({ message });
+    },
+
+    listeners: {
+	click: {
+	    element: 'body',
+	    fn: function() {
+		var mainview = this.component.up('mainview');
+		mainview.getController().redirectTo('pbsSubscription');
+	    },
+	},
+    },

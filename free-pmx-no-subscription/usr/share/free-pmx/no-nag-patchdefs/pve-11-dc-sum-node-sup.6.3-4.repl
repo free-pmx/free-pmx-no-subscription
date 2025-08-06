@@ -1,0 +1,7 @@
+	{
+	    header: gettext('Support'),
+	    width: 100,
+	    sortable: true,
+	    dataIndex: 'level',
+	    renderer: function() { return gettext('Community') },
+	},

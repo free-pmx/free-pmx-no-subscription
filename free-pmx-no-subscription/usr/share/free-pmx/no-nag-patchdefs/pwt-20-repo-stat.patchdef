@@ -1,80 +1,9 @@
 # Patch definition for no-nag
 # Source: proxmox-widget-toolkit/src/Utils.js
 
-_PD_DISP_="Common summary 'non-production repository' warning"
+DISPLAY="Common summary 'non-production repository' warning"
 
-_PD_PKG_="proxmox-widget-toolkit"
+PACKAGE="proxmox-widget-toolkit"
+SINCE="3.3-2|4.3.12"
 
-_PD_TGT_="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"
-
-raw _PD_ORIG_ << 'EOF'
-            if (status === 'ok') {
-                return (
-                    fmt(getUpdates, 'check-circle good') +
-                    ' ' +
-                    fmt(
-                        gettext('Production-ready Enterprise repository enabled'),
-                        'check-circle good',
-                    )
-                );
-            } else if (status === 'no-sub') {
-                return (
-                    fmt(
-                        gettext('Production-ready Enterprise repository enabled'),
-                        'check-circle good',
-                    ) +
-                    ' ' +
-                    fmt(
-                        gettext('Enterprise repository needs valid subscription'),
-                        'exclamation-circle warning',
-                    )
-                );
-            } else if (status === 'non-production') {
-                return (
-                    fmt(getUpdates, 'check-circle good') +
-                    ' ' +
-                    fmt(
-                        gettext('Non production-ready repository enabled!'),
-                        'exclamation-circle warning',
-                    )
-                );
-            } else if (status === 'no-repo') {
-                return fmt(noRepo, 'exclamation-circle critical');
-            }
-EOF
-
-raw _PD_REPL_ << 'EOF'
-            if (status === 'ok') {
-                return (
-                    fmt(getUpdates, 'check-circle good') +
-                    ' ' +
-                    fmt(
-                        gettext('Production-ready Enterprise repository enabled'),
-                        'check-circle good',
-                    )
-                );
-            } else if (status === 'no-sub') {
-                return (
-                    fmt(
-                        gettext('Production-ready Enterprise repository enabled'),
-                        'check-circle good',
-                    ) +
-                    ' ' +
-                    fmt(
-                        gettext('Enterprise repository needs valid subscription'),
-                        'exclamation-circle warning',
-                    )
-                );
-            } else if (status === 'non-production') {
-                return (
-                    fmt(getUpdates, 'check-circle good') +
-                    ' ' +
-                    fmt(
-                        gettext('No-subscription repository enabled'),
-                        'check-circle good',
-                    )
-                );
-            } else if (status === 'no-repo') {
-                return fmt(noRepo, 'exclamation-circle critical');
-            }
-EOF
+TARGET="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"

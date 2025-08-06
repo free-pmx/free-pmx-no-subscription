@@ -1,0 +1,22 @@
+            if (level === '') {
+                data = {
+                    title: gettext('No Subscription'),
+                    iconCls: 'good fa-minus-circle',
+                    text: 'Non-production use. See DISCLAIMER.&nbsp;' +
+                        '<a href="https://free-pmx.pages.dev/tools/free-pmx-no-subscription/#disclaimer" ' +
+                        'target="_blank"><i class="fa fa-external-link"></i></a>',
+                };
+				subs.setUserCls('');
+            } else if (mixed) {
+                data = {
+                    title: gettext('Mixed Subscriptions'),
+                    iconCls: PVE.Utils.get_health_icon('warning', true),
+                    text: gettext('Warning: Your subscription levels are not the same.'),
+                };
+                subs.setUserCls('pointer');
+            } else if (level) {
+                data = {
+                    title: PVE.Utils.render_support_level(level),
+                    iconCls: PVE.Utils.get_health_icon('good', true),
+                    text: gettext('Your subscription status is valid.'),
+                };

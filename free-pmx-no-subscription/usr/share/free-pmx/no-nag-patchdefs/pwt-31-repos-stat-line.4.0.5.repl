@@ -1,0 +1,15 @@
+let productionReadyCheck = (repos, type, noSubAlternateName) => {
+	if (!activeSubscription && repos.enterprise) {
+		addWarn(Ext.String.format(
+		gettext('The {0}enterprise repository is enabled, but there is no active subscription!'),
+		type,
+		));
+	}
+
+	if (repos.test) {
+		addWarn(Ext.String.format(
+		gettext('The {0}test repository may pull in unstable updates and is not recommended for production use!'),
+		type,
+		));
+	}
+	};

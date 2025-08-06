@@ -10,4 +10,3 @@ trap 'echo "${BASH_SOURCE[0]##*/}: Error $? (l.$LINENO) - aborted."; exit 1;' ER
 find "$dir" -type f \! -perm -u=x -exec chmod 644 {} \;
 find "$dir" -type f -perm -u=x -exec chmod 755 {} \;
 find "$dir" -type d -exec chmod 755 {} \;
-chmod 775 "$dir"

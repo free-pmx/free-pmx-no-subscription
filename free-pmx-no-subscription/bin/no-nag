@@ -55,32 +55,32 @@ for t in "${targets[@]}"; do
     fi    
 done
 
-if (( O_AUTORUN == 0 )) && (( no_file_count > 0 )); then
-    echo
-    echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    echo "NOTICE: Some ($no_file_count) file(s) to patch NOT FOUND."
-    echo
-    echo "It is EXPECTED when running the command MANUALLY with explicit target file ('-t')"
-    echo "that does not exist as not all products are likely installed (PVE, PBS, PMG)."
-fi
+(( O_AUTORUN == 0 )) && (( no_file_count > 0 )) && cat << EOF
 
-if (( O_AUTORUN == 0 )) && (( no_effect_count > 0 )); then
-    echo
-    echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    echo "NOTICE: Some ($no_effect_count) patch(es) had NO EFFECT."
-    echo
-    echo "It is EXPECTED when running the command MANUALLY and also after e.g. RE-INSTALL"
-    echo "of the free-pmx package during an automated run."
-    echo
-    echo "If you are still experiencing undesired artefacts in the web interface,"
-    echo "consider REFRESHING (CTRL+F5) your BROWSER or confirm the issue with ANOTHER."
-fi
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NOTICE: Some ($no_file_count) file(s) to patch NOT FOUND.
 
-if (( O_AUTORUN == 0 )); then
-    echo
-    echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    echo "Visit <https://free-pmx.pages.dev/tools/free-pmx-no-subscription/>"
-    echo "for more details, to check the latest version or to report an issue."
-fi
+It is EXPECTED when running the command MANUALLY with explicit target file ('-t')
+that does not exist as not all products are likely installed (PVE, PBS, PMG).
+EOF
+
+(( O_AUTORUN == 0 )) && (( no_effect_count > 0 )) && cat << EOF
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NOTICE: Some ($no_effect_count) patch(es) had NO EFFECT.
+
+It is EXPECTED when running the command MANUALLY and also after e.g. RE-INSTALL
+of the free-pmx package during an automated run.
+
+If you are still experiencing undesired artefacts in the web interface,
+consider REFRESHING (CTRL+F5) your BROWSER or confirm the issue with ANOTHER.
+EOF
+
+(( O_AUTORUN == 0 )) && cat << 'EOF'
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Visit <https://free-pmx.pages.dev/tools/free-pmx-no-subscription/>
+for more details, to check the latest version or to report an issue.
+EOF
 
 exit $status

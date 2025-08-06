@@ -1,69 +1,9 @@
 # Patch definition for no-nag
 # Source: proxmox-backup/www/Dashboard.js
 
-_PD_DISP_="PBS Summary Subscription panel"
+DISPLAY="PBS Summary Subscription panel"
 
-_PD_PKG_="proxmox-backup-server"
+PACKAGE="proxmox-backup-server"
+SINCE="0.3.0|3.4.3"
 
-_PD_TGT_="/usr/share/javascript/proxmox-backup/js/proxmox-backup-gui.js"
-
-raw _PD_ORIG_ << 'EOF'
-        switch (status) {
-            case 2:
-                icon = 'check good';
-                message = gettext('Your subscription status is valid.');
-                break;
-            case 1:
-                icon = 'exclamation-triangle warning';
-                message = gettext('Warning: Your subscription levels are not the same.');
-                break;
-            case 0:
-                icon = 'times-circle critical';
-                message = `<h1>${gettext('No valid subscription')}</h1>${PBS.Utils.noSubKeyHtml}`;
-                break;
-            default:
-                throw 'invalid subscription status';
-        }
-        me.getComponent('icon').update({ icon });
-        me.getComponent('message').update({ message });
-    },
-
-    listeners: {
-        click: {
-            element: 'body',
-            fn: function () {
-                var mainview = this.component.up('mainview');
-                mainview.getController().redirectTo('pbsSubscription');
-            },
-        },
-    },
-EOF
-
-raw _PD_REPL_ << 'EOF'
-        switch (status) {
-            case 2:
-                icon = 'check good';
-                message = gettext('Your subscription status is valid.');
-                break;
-            case 1:
-                icon = 'exclamation-triangle warning';
-                message = gettext('Warning: Your subscription levels are not the same.');
-                break;
-            case 0:
-                icon = 'minus-circle good';
-				message = `<h3>${gettext('No subscription')}</h3>` +
-					'Non-production use. See DISCLAIMER.&nbsp;' +
-					'<a href="https://free-pmx.pages.dev/tools/free-pmx-no-subscription/#disclaimer" ' +
-					'target="_blank"><i class="fa fa-external-link"></i></a>';
-                break;
-            default:
-                throw 'invalid subscription status';
-        }
-        me.getComponent('icon').update({ icon });
-        me.getComponent('message').update({ message });
-		me.setStyle('cursor', '');
-    },
-
-    listeners: {
-    },
-EOF
+TARGET="/usr/share/javascript/proxmox-backup/js/proxmox-backup-gui.js"

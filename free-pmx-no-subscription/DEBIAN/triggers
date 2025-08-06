@@ -1,7 +1,11 @@
+interest-noawait /etc/apt/sources.list.d/pve-enterprise.sources
+interest-noawait /etc/apt/sources.list.d/pbs-enterprise.sources
+interest-noawait /etc/apt/sources.list.d/pmg-enterprise.sources
 interest-noawait /etc/apt/sources.list.d/pve-enterprise.list
 interest-noawait /etc/apt/sources.list.d/pbs-enterprise.list
 interest-noawait /etc/apt/sources.list.d/pmg-enterprise.list
 interest-noawait /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
 interest-noawait /usr/share/pve-manager/js/pvemanagerlib.js
+interest-noawait /usr/share/pve-manager/touch/pvemanager-mobile.js
 interest-noawait /usr/share/javascript/proxmox-backup/js/proxmox-backup-gui.js
 interest-noawait /usr/share/javascript/pmg-gui/js/pmgmanagerlib.js

@@ -13,9 +13,10 @@ source "/usr/lib/free-pmx/no-subscription-common" 2> /dev/null \
 
 init "FREE_PMX_NO_SUBSCRIPTION" "$@"
 
-declare_apt_lists
+{ declare_aptsrcs; declare -i err=$?; }
+(( err & 1 )) && { echo "Cannot gather necessary system information, aborting." >&2; exit 1; }
 
-{ declare -A todo_id_flags; for i in "${ORD_LIST_IDS[@]}"; do todo_id_flags["$i"]=0; done; }
+{ declare -A todo_id_flags; for i in "${ORD_APTSRC_IDS[@]}"; do todo_id_flags["$i"]=0; done; }
 
 if [[ -n $O_TARGET ]]; then
     (( ${#ARGS[@]} == 0 )) \
@@ -23,8 +24,8 @@ if [[ -n $O_TARGET ]]; then
 
     declare list_id_match=''
 
-    for i in "${!APT_LISTS[@]}"; do
-        [[ $O_TARGET == "${APT_LISTS["$i"]}" ]] \
+    for i in "${!APTSRC_TARGETS[@]}"; do
+        [[ $O_TARGET == "${APTSRC_TARGETS["$i"]}" ]] \
         && { list_id_match="$i"; todo_id_flags["$i"]=1; break; }
     done
 
@@ -41,56 +42,51 @@ elif (( ${#ARGS[@]} > 0 )); then
         esac
     done
 else
-    echo -n "Detecting default lists ..."
-    for i in "${ORD_LIST_IDS[@]}"; do
-        [[ -f ${APT_LISTS["$i"]} ]] && todo_id_flags["$i"]=1 && echo -n " $i"
+    echo -n "Detecting default sources ..."
+    for i in "${ORD_APTSRC_IDS[@]}"; do
+        [[ -f ${APTSRC_TARGETS["$i"]} ]] && todo_id_flags["$i"]=1 && echo -n " $i"
     done
     echo        
 fi
 
-{ todo_count=0; for i in "${ORD_LIST_IDS[@]}"; do (( todo_count+=todo_id_flags[$i] )); done; }
+{ todo_count=0; for i in "${ORD_APTSRC_IDS[@]}"; do (( todo_count+=todo_id_flags[$i] )); done; }
 done_count=0
 
 if (( todo_count > 0 )); then
-    { declare_ns_repos; declare -i err=$?; }
-    (( err & 1 )) \
-    && { echo "Cannot assemble repository lists, aborting." >&2; exit 1; }
-    (( err & 2 )) && (( todo_id_flags["ceph"] == 1 )) \
+    (( todo_id_flags["ceph"] == 1 )) && [[ -z $FREE_PMX_CEPH ]] \
     && { todo_id_flags["ceph"]=0; echo "Ceph codename not configured, skipping ..." >&2; }
 
-    for i in "${ORD_LIST_IDS[@]}"; do
+    for i in "${ORD_APTSRC_IDS[@]}"; do
         (( todo_id_flags["$i"] == 1 )) \
         && echo "Setting up for $i ..." \
-        && run_rl_replace "${APT_LISTS["$i"]}" "${APT_LISTS_NEW["$i"]}" "${NS_REPOS["$i"]}" \
+        && run_rl_replace "${APTSRC_TARGETS["$i"]}" "${APTSRC_TEMPLS["$i"]}" \
         && (( done_count++ ))
     done
     (( done_count != todo_count )) && status=1
 
     echo "Completed total $done_count of $todo_count."
-
     echo
 
-    echo "Checking for Proxmox release key: $REPOS_KEY_LOCAL ..."
-    run_rk_check "$REPOS_KEY_LOCAL" "$REPOS_KEY_ORIGIN" \
+    echo "Checking for Proxmox release key: $FREE_PMX_APTKEY_LOCAL ..."
+    run_rk_check "$FREE_PMX_APTKEY_LOCAL" "$FREE_PMX_APTKEY_ORIGIN" \
     || { echo "Failed Proxmox release key check." >&2; status=1; }
 else
     echo "Nothing to be set up."
 fi
 
-if (( O_AUTORUN == 0 )) && (( done_count > 0 )); then
-    echo
-    echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    echo "NOTICE: Do not forget to perform UPDATE and UPGRADE, e.g.:"
-    echo
-    echo "  apt update"
-    echo "  apt full-upgrade"
-fi
+(( O_AUTORUN == 0 )) && (( done_count > 0 )) && cat << 'EOF'
 
-if (( O_AUTORUN == 0 )); then
-    echo
-    echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    echo "Visit <https://free-pmx.pages.dev/tools/free-pmx-no-subscription/>"
-    echo "for more details, to check the latest version or to report an issue."
-fi
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NOTICE: Do not forget to perform UPDATE and UPGRADE, e.g.:
+    apt update
+    apt full-upgrade
+EOF
+
+(( O_AUTORUN == 0 )) && cat << 'EOF'
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Visit <https://free-pmx.pages.dev/tools/free-pmx-no-subscription/>
+for more details, to check the latest version or to report an issue.
+EOF
 
 exit $status

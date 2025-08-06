@@ -1,56 +1,9 @@
 # Patch definition for no-nag
 # Source: pve-manager/www/manager6/dc/Summary.js
 
-_PD_DISP_="PVE Datacenter Summary Subscription panel"
+DISPLAY="PVE Datacenter Summary Subscription panel"
 
-_PD_PKG_="pve-manager"
+PACKAGE="pve-manager"
+SINCE="6.3-4|8.4.2"
 
-_PD_TGT_="/usr/share/pve-manager/js/pvemanagerlib.js"
-
-raw _PD_ORIG_ << 'EOF'
-            if (level === '') {
-                data = {
-                    title: gettext('No Subscription'),
-                    iconCls: PVE.Utils.get_health_icon('critical', true),
-                    text: gettext('You have at least one node without subscription.'),
-                };
-                subs.setUserCls('pointer');
-            } else if (mixed) {
-                data = {
-                    title: gettext('Mixed Subscriptions'),
-                    iconCls: PVE.Utils.get_health_icon('warning', true),
-                    text: gettext('Warning: Your subscription levels are not the same.'),
-                };
-                subs.setUserCls('pointer');
-            } else if (level) {
-                data = {
-                    title: PVE.Utils.render_support_level(level),
-                    iconCls: PVE.Utils.get_health_icon('good', true),
-                    text: gettext('Your subscription status is valid.'),
-                };
-EOF
-
-raw _PD_REPL_ << 'EOF'
-            if (level === '') {
-                data = {
-                    title: gettext('No Subscription'),
-                    iconCls: 'good fa-minus-circle',
-                    text: 'Non-production use. See DISCLAIMER.&nbsp;' +
-                        '<a href="https://free-pmx.pages.dev/tools/free-pmx-no-subscription/#disclaimer" ' +
-                        'target="_blank"><i class="fa fa-external-link"></i></a>',
-                };
-				subs.setUserCls('');
-            } else if (mixed) {
-                data = {
-                    title: gettext('Mixed Subscriptions'),
-                    iconCls: PVE.Utils.get_health_icon('warning', true),
-                    text: gettext('Warning: Your subscription levels are not the same.'),
-                };
-                subs.setUserCls('pointer');
-            } else if (level) {
-                data = {
-                    title: PVE.Utils.render_support_level(level),
-                    iconCls: PVE.Utils.get_health_icon('good', true),
-                    text: gettext('Your subscription status is valid.'),
-                };
-EOF
+TARGET="/usr/share/pve-manager/js/pvemanagerlib.js"

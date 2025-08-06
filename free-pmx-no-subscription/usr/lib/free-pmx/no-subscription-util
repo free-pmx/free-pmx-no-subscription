@@ -1,0 +1,107 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+
+checksum() {
+    [[ -n $1 ]] && declare file=$1 || return 255
+    declare algo=${2:-256} || return 255    
+
+    declare sum
+    declare -i err
+
+    sum=$(
+        { shasum --algorithm "$algo" "$file" | awk '{print $1}'; } 2> /dev/null
+        exit $((PIPESTATUS[0]|PIPESTATUS[1])) 
+    )
+    ! (( err=$? )) || unset sum
+
+    echo "$sum"
+    return $err
+}
+
+slurp() {
+    [[ -n $1 ]] && declare file=$1 || return 255
+    [[ -n $2 ]] && declare vname=$2 || return 255
+
+    { { IFS='' read -d '' -r "$vname" ||:; } < "$file"; } 2> /dev/null || return 1
+
+    [[ -n ${!vname} ]] || return 2
+}
+
+source_kv() {
+    [[ -n $1 ]] && declare file=$1 || return 255
+    [[ -n $2 ]] && declare -n _kv=$2 && [[ ${_kv@a} == *A* ]] && _kv[err]=255 || return 255
+    [[ -n $3 ]] && declare -a var_list=("${@:3}") || return 255
+
+    source <(
+        source "$file" &> /dev/null
+        declare err=$?
+        for e in "${var_list[@]}"; do
+            printf "_kv[$e]=%q\n" "${!e}"
+        done
+        echo "_kv[err]=$err"
+    ) 2> /dev/null || return 1
+
+    return $((_kv[err]))
+}
+
+check_kv_allset() {
+    [[ -n $1 ]] && declare -n _kv=$1 && [[ ${_kv@a} == *A* ]] || return 255
+    [[ -n $2 ]] && declare -a key_list=("${@:2}") || return 255
+    
+    for e in "${key_list[@]}"; do
+        [[ -n ${_kv[$e]} ]] || return 1
+    done
+}
+
+deb_last_le_version() {
+    [[ -n $1 ]] && declare package=$1 || return 255
+    [[ -n $2 ]] && declare vsequence=$2 || return 255
+
+    declare -a versions
+    IFS='|' read -r -a versions <<< "$vsequence"
+
+    declare v
+    { v=$(dpkg-query --show --showformat='${Version}\n' "$package"); } 2> /dev/null \
+    || return 1
+
+    declare -i i
+    for (( i=0; i < ${#versions[@]}; i++ )); do
+        dpkg --compare-versions "$v" ge "${versions[$i]}" 2> /dev/null \
+        || break
+    done
+
+    (( i > 0 )) \
+    || return 2
+
+    echo "${versions[$((i-1))]}"
+}
+
+subst_vars() {
+    [[ -n $1 ]] && declare -a vnames=("$@") || return 255
+
+    { declare e; for e in "${vnames[@]}"; do export "${e?}"; done; }
+    export SUBST_VNAMES="${vnames[*]}"
+    
+    perl -pe '
+        BEGIN {
+            @s = split / /, "$ENV{SUBST_VNAMES}";
+            $j = join "|", @s;
+            $m = qr/($j)/; 
+        }
+        s/$m/$ENV{$1}/g;
+    ' 2> /dev/null
+}
+
+subst_rawblock() {
+    [[ -n $1 ]] && declare -n _block=$1 && [[ ${_block@a} == *A* ]] || return 255
+
+    export SUBST_ORIG=${_block[ORIG]}
+    export SUBST_REPL=${_block[REPL]}
+
+    perl -p0e '
+        BEGIN {
+            $o = quotemeta($ENV{SUBST_ORIG});
+            $r = $ENV{SUBST_REPL};
+        }
+        s/$o/$r/;
+    ' 2> /dev/null
+}

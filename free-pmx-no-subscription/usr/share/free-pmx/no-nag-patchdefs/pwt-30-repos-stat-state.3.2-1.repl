@@ -1,0 +1,9 @@
+	updateState: function() {
+	    let me = this;
+	    let vm = me.getViewModel();
+
+	    let store = vm.get('errorstore');
+	    store.removeAll();
+
+	    let status = 'good'; // start with best, the helper below will downgrade if needed
+	    let text = gettext('OK');

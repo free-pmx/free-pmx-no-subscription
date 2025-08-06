@@ -1,28 +1,9 @@
 # # Patch definition for no-nag
 # Source: pve-manager/www/manager6/dc/NodeView.js
 
-_PD_DISP_="PVE Datacenter Summary Nodes panel - Support column"
+DISPLAY="PVE Datacenter Summary Nodes panel - Support column"
 
-_PD_PKG_="pve-manager"
+PACKAGE="pve-manager"
+SINCE="6.3-4|8.4.2"
 
-_PD_TGT_="/usr/share/pve-manager/js/pvemanagerlib.js"
-
-raw _PD_ORIG_ << 'EOF'
-            {
-                header: gettext('Support'),
-                width: 100,
-                sortable: true,
-                dataIndex: 'level',
-                renderer: PVE.Utils.render_support_level,
-            },
-EOF
-
-raw _PD_REPL_ << 'EOF'
-            {
-                header: gettext('Support'),
-                width: 100,
-                sortable: true,
-                dataIndex: 'level',
-                renderer: function () { return gettext('Community') },
-            },
-EOF
+TARGET="/usr/share/pve-manager/js/pvemanagerlib.js"

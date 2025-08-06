@@ -1,0 +1,14 @@
+    checked_command: function(orig_cmd) {
+	Proxmox.Utils.API2Request(
+	    {
+		url: '/nodes/localhost/subscription',
+		method: 'GET',
+		failure: function(response, opts) {
+		    Ext.Msg.alert(gettext('Error'), response.htmlStatus);
+		},
+		success: function(response, opts) {
+			orig_cmd();
+		},
+	    },
+	);
+    },

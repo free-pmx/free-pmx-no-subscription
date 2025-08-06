@@ -1,0 +1,12 @@
+	if (status === 'ok') {
+	    return fmt(getUpdates, 'check-circle good') + ' ' +
+		fmt(gettext('Production-ready Enterprise repository enabled'), 'check-circle good');
+	} else if (status === 'no-sub') {
+	    return fmt(gettext('Production-ready Enterprise repository enabled'), 'check-circle good') + ' ' +
+		    fmt(gettext('Enterprise repository needs valid subscription'), 'exclamation-circle warning');
+	} else if (status === 'non-production') {
+	    return fmt(getUpdates, 'check-circle good') + ' ' +
+		   fmt(gettext('No-subscription repository enabled'), 'check-circle good');
+	} else if (status === 'no-repo') {
+	    return fmt(noRepo, 'exclamation-circle critical');
+	}

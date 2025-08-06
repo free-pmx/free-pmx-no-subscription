@@ -1,0 +1,8 @@
+		    if (components[0].match(/\w+(-no-subscription|test)\s*$/i)) {
+			metaData.tdCls = 'proxmox-warning-row';
+			err = '<i class="fa fa-fw warning fa-exclamation-circle"></i> ';
+
+			let qtip = components[0].match(/no-subscription/)
+			    ? gettext('The no-subscription repository is NOT production-ready')
+			    : gettext('The test repository may contain unstable updates')
+			    ;

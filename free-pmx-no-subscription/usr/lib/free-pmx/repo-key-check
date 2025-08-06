@@ -2,7 +2,8 @@
 
 # SPDX-License-Identifier: AGPL-3.0-only
 
-set -o pipefail
+source "/usr/lib/free-pmx/no-subscription-util" 2> /dev/null \
+|| { echo "Internal error, aborting." >&2; exit 1; }
 
 declare -i status=0
 
@@ -29,7 +30,12 @@ gpg --show-keys "$repo_key" 2> /dev/null \
 
 [[ -d "$GNUPGHOME" ]] && rm -rf "$GNUPGHOME" 2> /dev/null
 
-{ sha512sum "$repo_key" | awk '{print "sha512 " $1}'; } 2> /dev/null \
-|| { echo "! Errors calculating key checksum." >&2; status=1; }
+declare checksum
+if checksum=$(checksum "$repo_key" 512); then
+    echo "sha512 $checksum"
+else
+    echo "! Errors calculating key checksum." >&2
+    status=1
+fi
 
 exit $status

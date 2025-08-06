@@ -1,55 +1,9 @@
 # Patch definition for no-nag
 # Source: proxmox-widget-toolkit/src/Utils.js
 
-_PD_DISP_="Common popup notice"
+DISPLAY="Common popup notice"
 
-_PD_PKG_="proxmox-widget-toolkit"
+PACKAGE="proxmox-widget-toolkit"
+SINCE="2.3-7|4.3.12"
 
-_PD_TGT_="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"
-
-raw _PD_ORIG_ << 'EOF'
-        checked_command: function (orig_cmd) {
-            Proxmox.Utils.API2Request({
-                url: '/nodes/localhost/subscription',
-                method: 'GET',
-                failure: function (response, opts) {
-                    Ext.Msg.alert(gettext('Error'), response.htmlStatus);
-                },
-                success: function (response, opts) {
-                    let res = response.result;
-                    if (
-                        res === null ||
-                        res === undefined ||
-                        !res ||
-                        res.data.status.toLowerCase() !== 'active'
-                    ) {
-                        Ext.Msg.show({
-                            title: gettext('No valid subscription'),
-                            icon: Ext.Msg.WARNING,
-                            message: Proxmox.Utils.getNoSubKeyHtml(res.data.url),
-                            buttons: Ext.Msg.OK,
-                            callback: function (btn) {
-                                if (btn !== 'ok') {
-                                    return;
-                                }
-                                orig_cmd();
-                            },
-                        });
-                    } else {
-                        orig_cmd();
-                    }
-                },
-EOF
-
-raw _PD_REPL_ << 'EOF'
-        checked_command: function (orig_cmd) {
-            Proxmox.Utils.API2Request({
-                url: '/nodes/localhost/subscription',
-                method: 'GET',
-                failure: function (response, opts) {
-                    Ext.Msg.alert(gettext('Error'), response.htmlStatus);
-                },
-                success: function (response, opts) {
-                    orig_cmd();
-                },
-EOF
+TARGET="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"

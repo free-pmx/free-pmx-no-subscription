@@ -1,32 +1,9 @@
 # Patch definition for no-nag
 # Source: proxmox-widget-toolkit/src/node/APTRepositories.js
 
-_PD_DISP_="Common 'All OK' repos status"
+DISPLAY="Common 'All OK' repos status"
 
-_PD_PKG_="proxmox-widget-toolkit"
+PACKAGE="proxmox-widget-toolkit"
+SINCE="3.2-1|4.3.12"
 
-_PD_TGT_="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"
-
-raw _PD_ORIG_ << 'EOF'
-        updateState: function () {
-            let me = this;
-            let vm = me.getViewModel();
-
-            let store = vm.get('errorstore');
-            store.removeAll();
-
-            let status = 'good'; // start with best, the helper below will downgrade if needed
-            let text = gettext('All OK, you have production-ready repositories configured!');
-EOF
-
-raw _PD_REPL_ << 'EOF'
-        updateState: function () {
-            let me = this;
-            let vm = me.getViewModel();
-
-            let store = vm.get('errorstore');
-            store.removeAll();
-
-            let status = 'good'; // start with best, the helper below will downgrade if needed
-            let text = gettext('OK');
-EOF
+TARGET="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"

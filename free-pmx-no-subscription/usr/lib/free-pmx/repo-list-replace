@@ -2,27 +2,37 @@
 
 # SPDX-License-Identifier: AGPL-3.0-only
 
+source "/usr/lib/free-pmx/no-subscription-util" 2> /dev/null \
+|| { echo "Internal error, aborting." >&2; exit 1; }
+
 declare -i status=0
 
-[[ -n $1 ]] && declare -r old_list=$1 || exit 1
-[[ -n $2 ]] && declare -r new_list=$2 || exit 1
-[[ -n $3 ]] && declare -r new_source=$3 || exit 1
+[[ -n $1 ]] && declare -r orig=$1 || exit 1
+[[ -n $2 ]] && declare -r templ=$2 || exit 1
 
-if [[ ! -f $old_list ]]; then
-    echo "~ Original not present: $old_list"
-elif mv "$old_list"{,.disabled} 2> /dev/null; then
-    echo "+ Disabled original: $old_list"
+[[ -n $FREE_PMX_DEBIAN ]] || exit 2
+
+if [[ ! -f $orig ]]; then
+    echo "~ Original not present: $orig"
+elif mv "$orig"{,.disabled} 2> /dev/null; then
+    echo "+ Disabled original: $orig"
 else
-    echo "! Could not disable original: $old_list" >&2
+    echo "! Could not disable original: $orig" >&2
     status=1
 fi
 
-if [[ -f $new_list ]]; then
-    echo "~ New NOT created as already present: $new_list"
-elif { cat > "$new_list" <<< "$new_source"; } 2> /dev/null; then
-    echo "+ Created new: $new_list"
+declare dir="${orig%/*}"
+declare templ_name="${templ##*/}"
+declare repl_name="${templ_name%.template}"
+declare repl="$dir/$repl_name"
+declare -a vars=(FREE_PMX_{DEBIAN,CEPH,APTKEY_SHARE,APTKEY_LOCAL})
+
+if [[ -f $repl ]]; then
+    echo "~ New NOT created as already present: $repl"
+elif { subst_vars "${vars[@]}" < "$templ" > "$repl"; } 2> /dev/null; then
+    echo "+ Created new: $repl"
 else
-    echo "! Could not create: $new_list" >&2
+    echo "! Could not create: $repl" >&2
     status=1
 fi
 

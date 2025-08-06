@@ -1,0 +1,7 @@
+	{
+	    header: gettext('Support'),
+	    width: 100,
+	    sortable: true,
+	    dataIndex: 'level',
+	    renderer: PVE.Utils.render_support_level,
+	},

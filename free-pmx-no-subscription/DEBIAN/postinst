@@ -15,6 +15,9 @@ case "$1" in
 
             case "$t" in
 
+                "/etc/apt/sources.list.d/pve-enterprise.sources"|\
+                "/etc/apt/sources.list.d/pbs-enterprise.sources"|\
+                "/etc/apt/sources.list.d/pmg-enterprise.sources"|\
                 "/etc/apt/sources.list.d/pve-enterprise.list"|\
                 "/etc/apt/sources.list.d/pbs-enterprise.list"|\
                 "/etc/apt/sources.list.d/pmg-enterprise.list")
@@ -25,6 +28,7 @@ case "$1" in
 
                 "/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"|\
                 "/usr/share/pve-manager/js/pvemanagerlib.js"|\
+                "/usr/share/pve-manager/touch/pvemanager-mobile.js"|\
                 "/usr/share/javascript/proxmox-backup/js/proxmox-backup-gui.js"|\
                 "/usr/share/javascript/pmg-gui/js/pmgmanagerlib.js")
 

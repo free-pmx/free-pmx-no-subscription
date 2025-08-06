@@ -2,48 +2,60 @@
 
 # SPDX-License-Identifier: AGPL-3.0-only
 
-set -o pipefail
+source "/usr/lib/free-pmx/no-subscription-util" 2> /dev/null \
+|| { echo "Internal error, aborting." >&2; exit 1; }
 
 declare -i status=0
 
 [[ -n $1 ]] && declare -r patchdef=$1 || exit 1
 declare -r bak_ext=$2
 
-unset _PD_DISP_ _PD_TGT_ _PD_ORIG_ _PD_REPL_
-raw() { IFS='' read -d '' -r "$1" ||:; }
-source "$patchdef" 2> /dev/null \
+declare -A pd
+source_kv "$patchdef" pd DISPLAY TARGET PACKAGE SINCE \
+&& check_kv_allset pd DISPLAY TARGET PACKAGE SINCE \
 || { echo "! Corrupt patch definition: $patchdef" >&2; exit $(( status | 1 )); }
-unset raw
 
-[[ -n $_PD_DISP_ ]] && [[ -n $_PD_TGT_ ]] && [[ -n $_PD_ORIG_ ]] && [[ -n $_PD_REPL_ ]] \
-|| { echo "! Invalid patch definition: $patchdef" >&2; exit $(( status | 1 )); }
+[[ -f ${pd[TARGET]} ]] \
+|| { echo "! File to patch not present for: ${pd[DISPLAY]}" >&2; exit $(( status | 2 )); }
 
-[[ -f $_PD_TGT_ ]] \
-|| { echo "! File to patch not present for: $_PD_DISP_" >&2; exit $(( status | 2 )); }
+declare pd_version
+pd_version=$(deb_last_le_version "${pd[PACKAGE]}" "${pd[SINCE]}") \
+|| { echo "! Cannot determine appropriate patch version: $patchdef" >&2; exit $(( status | 4 )); }
+
+declare pd_partial="${patchdef%*.patchdef}.$pd_version"
+
+declare -A pd_rawblock
+slurp "$pd_partial".orig 'pd_rawblock[ORIG]' \
+&& slurp "$pd_partial".repl 'pd_rawblock[REPL]' \
+|| { echo "! Error loading patch partials: $pd_partial.{orig,repl}" >&2; exit $(( status | 4 )); }
 
 if [[ -n $bak_ext ]]; then
-    cp "$_PD_TGT_"{,."$bak_ext"} 2> /dev/null \
-    || echo "! Unable to make a '.$bak_ext' copy: $_PD_TGT_" >&2
+    cp "${pd[TARGET]}"{,."$bak_ext"} 2> /dev/null \
+    || echo "! Unable to make a '.$bak_ext' copy: ${pd[TARGET]}" >&2
 fi
 
-declare checksum_prior=$(sha512sum "$_PD_TGT_" 2> /dev/null | awk '{print $1}') \
-|| unset checksum_prior
+declare tfile checksum_prior checksum_after
 
-export _PD_ORIG_ _PD_REPL_
-perl -pi -e 'BEGIN { undef $/; $o = quotemeta($ENV{_PD_ORIG_}); $r = $ENV{_PD_REPL_}; } s/$o/$r/;' "$_PD_TGT_" 2> /dev/null \
-|| { echo "! Error during patch application: $_PD_DISP_" >&2; exit $(( status | 2 )); }
+checksum_prior=$(checksum "${pd[TARGET]}")
 
-declare checksum_after=$(sha512sum "$_PD_TGT_" 2> /dev/null | awk '{print $1}') \
-|| unset checksum_after
+{
+tfile=$(mktemp /tmp/free_pmx_patched_XXXXXX) \
+&& chmod 644 "$tfile" \
+&& subst_rawblock pd_rawblock < "${pd[TARGET]}" > "$tfile" \
+&& mv -f "$tfile" "${pd[TARGET]}"; \
+} 2> /dev/null \
+|| { echo "! Error during patch application: ${pd[DISPLAY]}" >&2; exit $(( status | 2 )); }
+
+checksum_after=$(checksum "${pd[TARGET]}")
 
 if [[ -z $checksum_prior ]] || [[ -z $checksum_after ]]; then
-    echo "? Unknown result: $_PD_DISP_"
+    echo "? Unknown result: ${pd[DISPLAY]}"
     status=$(( status | 4 ))
 elif [[ $checksum_prior == "$checksum_after" ]]; then
-    echo "- NO effect: $_PD_DISP_"
+    echo "- NO effect: ${pd[DISPLAY]}"
     status=$(( status | 8 ))
 else
-    echo "+ OK: $_PD_DISP_"
+    echo "+ OK: ${pd[DISPLAY]}"
 fi
 
 exit $status
