@@ -4,5 +4,4 @@ Types: deb
 URIs: http://download.proxmox.com/debian/pmg
 Suites: FREE_PMX_DEBIAN
 Components: pmg-no-subscription
-Signed-By: FREE_PMX_APTKEY_SHARE
-Signed-By: FREE_PMX_APTKEY_LOCAL
+Signed-By: FREE_PMX_APTKEY

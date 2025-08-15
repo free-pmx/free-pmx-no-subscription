@@ -4,6 +4,6 @@
 DISPLAY="PVE Datacenter Summary Subscription panel"
 
 PACKAGE="pve-manager"
-SINCE="6.3-4|8.4.2"
+SINCE="6.3-4;8.4.2;"
 
 TARGET="/usr/share/pve-manager/js/pvemanagerlib.js"

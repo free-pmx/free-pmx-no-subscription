@@ -1,52 +1,44 @@
 #!/bin/bash
 set -e
 
+source "/usr/lib/free-pmx/no-subscription-common" \
+    && declare_ns_globals \
+    && declare_nn_globals \
+    || {
+        echo "ERROR: ${0##*/} - auto-run skipped." >&2
+        exit 0
+    }
+
 case "$1" in
-    configure)
 
-		no-subscription -a || echo "ISSUES reported: $1" >&2
-		no-nag -a || echo "ISSUES reported: $1" >&2
+configure)
 
+    no-subscription -a || echo "ISSUES reported: $1" >&2
+    no-nag -a || echo "ISSUES reported: $1" >&2
     ;;
 
-    triggered)
+triggered)
 
-        for t in $2; do
+    for t in $2; do
 
-            case "$t" in
+        if [[ -v APTSRC_TARGET_TO_ID[$t] ]]; then
+            no-subscription -at "$t" || echo "ISSUES reported: $1 $t" >&2
+        elif [[ -v PATCHDEF_TARGET_TO_IDS[$t] ]]; then
+            no-nag -at "$t" || echo "ISSUES reported: $1 $t" >&2
+        fi
 
-                "/etc/apt/sources.list.d/pve-enterprise.sources"|\
-                "/etc/apt/sources.list.d/pbs-enterprise.sources"|\
-                "/etc/apt/sources.list.d/pmg-enterprise.sources"|\
-                "/etc/apt/sources.list.d/pve-enterprise.list"|\
-                "/etc/apt/sources.list.d/pbs-enterprise.list"|\
-                "/etc/apt/sources.list.d/pmg-enterprise.list")
-
-                    no-subscription -at "$t" || echo "ISSUES reported: $1 $2" >&2
-
-                ;;
-
-                "/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"|\
-                "/usr/share/pve-manager/js/pvemanagerlib.js"|\
-                "/usr/share/pve-manager/touch/pvemanager-mobile.js"|\
-                "/usr/share/javascript/proxmox-backup/js/proxmox-backup-gui.js"|\
-                "/usr/share/javascript/pmg-gui/js/pmgmanagerlib.js")
-
-                    no-nag -at "$t" || echo "ISSUES reported: $1 $2" >&2
-
-                ;;
-
-            esac
-
-        done
-
+    done
     ;;
 
-    abort-upgrade|abort-remove|abort-deconfigure)
+abort-upgrade | abort-remove | abort-deconfigure)
+
+    :
     ;;
 
-    *) 
-        echo "ERROR: $0 - unknown argument: $1" >&2
-        exit 1
+*)
+
+    echo "ERROR: ${0##*/} - unknown argument: $1" >&2
+    exit 1
     ;;
+
 esac

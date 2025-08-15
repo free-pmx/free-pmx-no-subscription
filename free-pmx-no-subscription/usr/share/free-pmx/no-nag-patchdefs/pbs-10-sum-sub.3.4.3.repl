@@ -9,17 +9,17 @@
                 break;
             case 0:
                 icon = 'minus-circle good';
-				message = `<h3>${gettext('No subscription')}</h3>` +
-					'Non-production use. See DISCLAIMER.&nbsp;' +
-					'<a href="https://free-pmx.pages.dev/tools/free-pmx-no-subscription/#disclaimer" ' +
-					'target="_blank"><i class="fa fa-external-link"></i></a>';
+                message = `<h3>${gettext('No subscription')}</h3>` +
+                    'Non-production use. See DISCLAIMER.&nbsp;' +
+                    '<a href="https://free-pmx.pages.dev/tools/free-pmx-no-subscription/#disclaimer" ' +
+                    'target="_blank"><i class="fa fa-external-link"></i></a>';
                 break;
             default:
                 throw 'invalid subscription status';
         }
         me.getComponent('icon').update({ icon });
         me.getComponent('message').update({ message });
-		me.setStyle('cursor', '');
+        me.setStyle('cursor', '');
     },
 
     listeners: {

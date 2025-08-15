@@ -1,70 +1,77 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: Copyright 2025 free-pmx
 # SPDX-License-Identifier: AGPL-3.0-only
-
-echo
-echo "free-pmx: NO-NAG - 'No Subscription' Nags Removal"
-trap "echo" EXIT
 
 declare -i status=0
 
-source "/usr/lib/free-pmx/no-subscription-common" 2> /dev/null \
-|| { echo "Internal error, aborting." >&2; exit 1; }
+source "/usr/lib/free-pmx/no-subscription-common" \
+    && init_out \
+    || exit 255
 
-init "FREE_PMX_NO_NAG" "$@"
+print OUT
+print OUT "free-pmx: NO-NAG - 'No Subscription' Nags Removal"
+trap 'print OUT' EXIT
 
-(( ${#ARGS[@]} == 0 )) \
-|| { echo "Arguments not supported." >&2; exit 1; }
+init_run "FREE_PMX_NO_NAG" "$@"
 
-{ declare_patchdefs; declare -i err=$?; }
-(( err & 1+2 )) && echo "Warning: Issues parsing some patch definitions."
+declare_nn_globals || {
+    print ERR "Warning: Issues parsing some patch definitions."
+}
+
+((${#ARGS[@]} == 0)) || {
+    print ERR "Arguments not supported."
+    exit 1
+}
 
 declare -a targets=()
-
 if [[ -n $O_TARGET ]]; then
-    echo "Explicit target: $O_TARGET"
+    print OUT "Explicit target specified."
     targets+=("$O_TARGET")
 else
-    targets+=("${AVAIL_PATCH_TARGETS[@]}")
+    targets+=("${PATCHDEF_TARGET_LIST[@]}")
 fi
 
-declare -i no_file_count=0
-declare -i no_effect_count=0
-
-for t in "${targets[@]}"; do
-    if [[ -f "$t" ]] || [[ -n "$O_TARGET" ]]; then
-        echo "Patches applicable to: $t ..."
+declare -i no_file_count=0 no_effect_count=0
+declare -ra bak_ext_variants=(bak original)
+declare target
+for target in "${targets[@]}"; do
+    if [[ -f "$target" ]] || [[ -n "$O_TARGET" ]]; then
+        print OUT "Patches applicable to: $target ..."
 
         declare -a todo_ids=()
-        for i in "${ORD_PATCHDEF_IDS[@]}"; do
-            if [[ ${PATCHDEF_TARGETS["$i"]} == "$t" ]]; then todo_ids+=("$i"); fi
-        done
+        IFS=';' read -r -a todo_ids <<< "${PATCHDEF_TARGET_TO_IDS[$target]}"
 
-        (( ${#todo_ids[@]} == 0 )) \
-        && { echo "No patch definitions for this target." >&2; status=1; }
+        ((${#todo_ids[@]} == 0)) && {
+            print ERR "No patch definitions for this target."
+            ((status |= 1))
+        }
 
+        declare -i i
         for i in "${!todo_ids[@]}"; do
-            declare bak_ext=""
-            (( i == 0 )) && (( O_AUTORUN == 0 )) && bak_ext="bak"
-            (( i == 0 )) && (( O_AUTORUN == 1 )) && bak_ext="original"
+            declare bak_ext=''
+            ((i)) || bak_ext="${bak_ext_variants[$O_AUTORUN]}"
 
-            { run_pd_apply "${PATCHDEF_DIR}/${todo_ids[$i]}.patchdef" "$bak_ext"; declare -i err=$?; }
-            (( err & 2 )) && no_file_count+=1
-            (( err & 8 )) && no_effect_count+=1
-        done    
-    fi    
+            run_patchdef_apply "${PATCHDEF_DIR}/${todo_ids[$i]}.patchdef" "$bak_ext"
+            declare -i err=$?
+            ! ((err & 2)) || ((no_file_count++))
+            ! ((err & 8)) || ((no_effect_count++))
+        done
+    fi
 done
 
-(( O_AUTORUN == 0 )) && (( no_file_count > 0 )) && cat << EOF
+! ((O_AUTORUN)) && ((no_file_count > 0)) \
+    && print ERR $'\e' << EOF
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-NOTICE: Some ($no_file_count) file(s) to patch NOT FOUND.
+NOTICE: Some ($no_file_count) patch attempt(s) with target file NOT FOUND.
 
 It is EXPECTED when running the command MANUALLY with explicit target file ('-t')
 that does not exist as not all products are likely installed (PVE, PBS, PMG).
 EOF
 
-(( O_AUTORUN == 0 )) && (( no_effect_count > 0 )) && cat << EOF
+! ((O_AUTORUN)) && ((no_effect_count > 0)) \
+    && print ERR $'\e' << EOF
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 NOTICE: Some ($no_effect_count) patch(es) had NO EFFECT.
@@ -76,11 +83,12 @@ If you are still experiencing undesired artefacts in the web interface,
 consider REFRESHING (CTRL+F5) your BROWSER or confirm the issue with ANOTHER.
 EOF
 
-(( O_AUTORUN == 0 )) && cat << 'EOF'
+! ((O_AUTORUN)) \
+    && print ERR $'\e' << EOF
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Visit <https://free-pmx.pages.dev/tools/free-pmx-no-subscription/>
+Visit $NS_WEB
 for more details, to check the latest version or to report an issue.
 EOF
 
-exit $status
+exit $((status))

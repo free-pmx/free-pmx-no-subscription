@@ -6,7 +6,7 @@
                         '<a href="https://free-pmx.pages.dev/tools/free-pmx-no-subscription/#disclaimer" ' +
                         'target="_blank"><i class="fa fa-external-link"></i></a>',
                 };
-				subs.setUserCls('');
+                subs.setUserCls('');
             } else if (mixed) {
                 data = {
                     title: gettext('Mixed Subscriptions'),

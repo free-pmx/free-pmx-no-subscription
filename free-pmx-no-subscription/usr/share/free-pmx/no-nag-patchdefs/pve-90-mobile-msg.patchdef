@@ -4,6 +4,6 @@
 DISPLAY="PVE mobile popup notice"
 
 PACKAGE="pve-manager"
-SINCE="7.4-4|8.4.2"
+SINCE="7.4-4;8.4.2;"
 
 TARGET="/usr/share/pve-manager/touch/pvemanager-mobile.js"

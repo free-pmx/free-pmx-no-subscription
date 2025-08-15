@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: Copyright 2025 free-pmx
+# SPDX-License-Identifier: AGPL-3.0-only
+
+declare -i status=0
+
+source "/usr/lib/free-pmx/no-subscription-util" \
+    && init_out \
+    || exit 255
+
+[[ -n $1 ]] && declare -r aptkey=$1 || exit 1
+[[ -n $2 ]] && declare -r aptkey_url=$2 || exit 1
+
+if [[ -f $aptkey ]]; then
+    print OUT "+ Already present: $aptkey"
+else
+    print OUT "~ Not present, retrieving: $aptkey_url ..."
+    if wget -q "$aptkey_url" -O "$aptkey"; then
+        print OUT "Retrieved: $aptkey"
+    else
+        print ERR "! Errors attempting to retrieve or store key."
+        ((status |= 1))
+    fi
+fi
+
+declare -x GNUPGHOME
+GNUPGHOME=$(mktemp -d /tmp/gnupg-XXXXXX)
+[[ -d "$GNUPGHOME" ]] || unset GNUPGHOME
+
+gpg --show-keys "$aptkey" || {
+    print ERR "! Errors examining key details."
+    ((status |= 1))
+}
+
+[[ -d "$GNUPGHOME" ]] && rm -rf "$GNUPGHOME"
+
+declare sha256 sha512
+sha256=$(checksum "$aptkey" 256) || unset sha256
+sha512=$(checksum "$aptkey" 512) || unset sha512
+
+if [[ -n $sha256 ]] && [[ -n $sha512 ]]; then
+    print OUT "sha256 $sha256"
+    print OUT
+    print OUT "sha512 $sha512"
+else
+    print ERR "! Errors calculating key checksum."
+    ((status |= 1))
+fi
+
+exit $((status))

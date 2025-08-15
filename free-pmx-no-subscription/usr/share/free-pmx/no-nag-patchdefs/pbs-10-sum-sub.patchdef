@@ -4,6 +4,6 @@
 DISPLAY="PBS Summary Subscription panel"
 
 PACKAGE="proxmox-backup-server"
-SINCE="0.3.0|3.4.3"
+SINCE="0.3.0;3.4.3;"
 
 TARGET="/usr/share/javascript/proxmox-backup/js/proxmox-backup-gui.js"

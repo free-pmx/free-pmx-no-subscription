@@ -4,6 +4,6 @@
 DISPLAY="Common summary 'non-production repository' warning"
 
 PACKAGE="proxmox-widget-toolkit"
-SINCE="3.3-2|4.3.12"
+SINCE="3.3-2;4.3.12;"
 
 TARGET="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"

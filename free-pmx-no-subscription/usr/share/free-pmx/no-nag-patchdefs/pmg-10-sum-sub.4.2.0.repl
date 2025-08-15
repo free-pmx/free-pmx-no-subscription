@@ -17,7 +17,7 @@
             default:
                 throw 'invalid subscription status';
         }
-	    me.setStyle('cursor', '');
+        me.setStyle('cursor', '');
         me.update(data);
     },
     tpl: [

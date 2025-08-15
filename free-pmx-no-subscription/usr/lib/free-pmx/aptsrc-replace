@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: Copyright 2025 free-pmx
+# SPDX-License-Identifier: AGPL-3.0-only
+
+declare -i status=0
+
+source "/usr/lib/free-pmx/no-subscription-util" \
+    && init_out \
+    || exit 255
+
+[[ -n $1 ]] && declare -r orig=$1 || exit 1
+[[ -n $2 ]] && declare -r templ=$2 || exit 1
+
+[[ -n $FREE_PMX_DEBIAN ]] || exit 2
+
+if [[ ! -f $orig ]]; then
+    print OUT "~ Original not present: $orig"
+elif mv "$orig"{,.disabled}; then
+    print OUT "+ Disabled original: $orig"
+else
+    print ERR "! Could not disable original: $orig"
+    ((status |= 1))
+fi
+
+declare dir="${orig%/*}"
+declare templ_name="${templ##*/}"
+declare repl_name="${templ_name%.template}"
+declare repl="$dir/$repl_name"
+declare -a vars=(FREE_PMX_{DEBIAN,CEPH,APTKEY})
+
+if [[ -f $repl ]]; then
+    print OUT "~ New NOT created as already present: $repl"
+elif subst_vars "${vars[@]}" < "$templ" > "$repl"; then
+    print OUT "+ Created new: $repl"
+else
+    print ERR "! Could not create: $repl"
+    ((status |= 1))
+fi
+
+exit $((status))

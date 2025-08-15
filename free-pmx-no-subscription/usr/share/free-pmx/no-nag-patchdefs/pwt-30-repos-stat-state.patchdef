@@ -4,6 +4,6 @@
 DISPLAY="Common 'All OK' repos status"
 
 PACKAGE="proxmox-widget-toolkit"
-SINCE="3.2-1|4.3.12"
+SINCE="3.2-1;4.3.12;"
 
 TARGET="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"

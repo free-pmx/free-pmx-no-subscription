@@ -4,6 +4,6 @@
 DISPLAY="PMG Summary Subscription panel"
 
 PACKAGE="pmg-gui"
-SINCE="2.2-3|4.2.0"
+SINCE="2.2-3;4.2.0;"
 
 TARGET="/usr/share/javascript/pmg-gui/js/pmgmanagerlib.js"

@@ -4,6 +4,6 @@
 DISPLAY="Common popup notice"
 
 PACKAGE="proxmox-widget-toolkit"
-SINCE="2.3-7|4.3.12"
+SINCE="2.3-7;4.3.12;"
 
 TARGET="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"

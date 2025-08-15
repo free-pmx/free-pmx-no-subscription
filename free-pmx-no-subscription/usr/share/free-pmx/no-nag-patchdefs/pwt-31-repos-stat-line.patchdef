@@ -4,6 +4,6 @@
 DISPLAY="Common 'not recommended for production use' repos status message"
 
 PACKAGE="proxmox-widget-toolkit"
-SINCE="4.0.5|4.3.12"
+SINCE="4.0.5;4.3.12;"
 
 TARGET="/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"

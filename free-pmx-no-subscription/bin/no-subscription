@@ -1,80 +1,101 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: Copyright 2025 free-pmx
 # SPDX-License-Identifier: AGPL-3.0-only
-
-echo
-echo "free-pmx: NO-SUBSCRIPTION - 'No Subscription' Repositories Setup"
-trap "echo" EXIT
 
 declare -i status=0
 
-source "/usr/lib/free-pmx/no-subscription-common" 2> /dev/null \
-|| { echo "Internal error, aborting." >&2; exit 1; }
+source "/usr/lib/free-pmx/no-subscription-common" \
+    && init_out \
+    || exit 255
 
-init "FREE_PMX_NO_SUBSCRIPTION" "$@"
+print OUT
+print OUT "free-pmx: NO-SUBSCRIPTION - 'No Subscription' Repositories Setup"
+trap 'print OUT' EXIT
 
-{ declare_aptsrcs; declare -i err=$?; }
-(( err & 1 )) && { echo "Cannot gather necessary system information, aborting." >&2; exit 1; }
+init_run "FREE_PMX_NO_SUBSCRIPTION" "$@"
 
-{ declare -A todo_id_flags; for i in "${ORD_APTSRC_IDS[@]}"; do todo_id_flags["$i"]=0; done; }
+declare_ns_globals || {
+    print ERR "Cannot gather necessary system information, aborting."
+    exit 1
+}
+
+declare -A todo_id_flags
+declare id
+for id in "${APTSRC_ID_LIST[@]}"; do todo_id_flags[$id]=0; done
 
 if [[ -n $O_TARGET ]]; then
-    (( ${#ARGS[@]} == 0 )) \
-    || { echo "Arguments not allowed when used with '-t' option." >&2; exit 1; }
+    ((${#ARGS[@]} == 0)) || {
+        print ERR "Arguments not allowed when used with '-t' option."
+        exit 1
+    }
 
-    declare list_id_match=''
-
-    for i in "${!APTSRC_TARGETS[@]}"; do
-        [[ $O_TARGET == "${APTSRC_TARGETS["$i"]}" ]] \
-        && { list_id_match="$i"; todo_id_flags["$i"]=1; break; }
-    done
-
-    if [[ -n $list_id_match ]]; then
-        echo "Explicit target recognised as $list_id_match: $O_TARGET"
+    declare id="${APTSRC_TARGET_TO_ID[$O_TARGET]}"
+    if [[ -n $id ]]; then
+        print OUT "Explicit target recognised."
+        todo_id_flags[$id]=1
     else
-        { echo "No defined repositories for this target." >&2; exit 1; }
+        print ERR "No defined repositories for this target."
+        ((status |= 1))
     fi
-elif (( ${#ARGS[@]} > 0 )); then
+elif ((${#ARGS[@]} > 0)); then
+    declare arg
     for arg in "${ARGS[@]}"; do
-        case "$arg" in
-            pve|pbs|pmg|ceph) todo_id_flags["$arg"]=1;;
-            *) { echo "Invalid argument: $arg" >&2; exit 1; };;
-        esac
+        [[ -v APTSRC_ID_TO_TARGET[$arg] ]] || {
+            print ERR "Invalid argument: $arg"
+            exit 1
+        }
+
+        todo_id_flags[$arg]=1
     done
 else
     echo -n "Detecting default sources ..."
-    for i in "${ORD_APTSRC_IDS[@]}"; do
-        [[ -f ${APTSRC_TARGETS["$i"]} ]] && todo_id_flags["$i"]=1 && echo -n " $i"
+    declare id
+    for id in "${APTSRC_ID_LIST[@]}"; do
+        [[ -f ${APTSRC_ID_TO_TARGET[$id]} ]] && todo_id_flags[$id]=1 && echo -n " $id"
     done
-    echo        
-fi
-
-{ todo_count=0; for i in "${ORD_APTSRC_IDS[@]}"; do (( todo_count+=todo_id_flags[$i] )); done; }
-done_count=0
-
-if (( todo_count > 0 )); then
-    (( todo_id_flags["ceph"] == 1 )) && [[ -z $FREE_PMX_CEPH ]] \
-    && { todo_id_flags["ceph"]=0; echo "Ceph codename not configured, skipping ..." >&2; }
-
-    for i in "${ORD_APTSRC_IDS[@]}"; do
-        (( todo_id_flags["$i"] == 1 )) \
-        && echo "Setting up for $i ..." \
-        && run_rl_replace "${APTSRC_TARGETS["$i"]}" "${APTSRC_TEMPLS["$i"]}" \
-        && (( done_count++ ))
-    done
-    (( done_count != todo_count )) && status=1
-
-    echo "Completed total $done_count of $todo_count."
     echo
-
-    echo "Checking for Proxmox release key: $FREE_PMX_APTKEY_LOCAL ..."
-    run_rk_check "$FREE_PMX_APTKEY_LOCAL" "$FREE_PMX_APTKEY_ORIGIN" \
-    || { echo "Failed Proxmox release key check." >&2; status=1; }
-else
-    echo "Nothing to be set up."
 fi
 
-(( O_AUTORUN == 0 )) && (( done_count > 0 )) && cat << 'EOF'
+declare -i todo_count=0 done_count=0
+declare id
+for id in "${APTSRC_ID_LIST[@]}"; do ((todo_count += todo_id_flags[$id])); done
+
+if ((todo_count > 0)); then
+    ((todo_id_flags[ceph])) && [[ -z $FREE_PMX_CEPH ]] && {
+        print ERR "Ceph codename not configured, skipping ..."
+        todo_id_flags[ceph]=0
+    }
+
+    declare id
+    for id in "${APTSRC_ID_LIST[@]}"; do
+        ((todo_id_flags[$id])) \
+            && print OUT "Setting up for $id ..." \
+            && run_aptsrc_replace "${APTSRC_ID_TO_TARGET[$id]}" "${APTSRC_ID_TO_TEMPL[$id]}" \
+            && ((done_count++))
+    done
+    ((done_count == todo_count)) || ((status |= 1))
+
+    print OUT "Completed total $done_count of $todo_count."
+
+    print OUT
+
+    print OUT "Checking for Proxmox release key ..."
+
+    if [[ $FREE_PMX_APTKEY == "$FREE_PMX_APTKEY_LOCAL" ]]; then
+        run_aptkey_check "$FREE_PMX_APTKEY_LOCAL" "$FREE_PMX_APTKEY_ORIGIN" || {
+            print ERR "Failed Proxmox release key check."
+            ((status |= 1))
+        }
+    else
+        print OUT "Skipped - custom key specified: $FREE_PMX_APTKEY"
+    fi
+else
+    print OUT "Nothing to be set up."
+fi
+
+! ((O_AUTORUN)) && ((done_count > 0)) \
+    && print ERR $'\e' << EOF
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 NOTICE: Do not forget to perform UPDATE and UPGRADE, e.g.:
@@ -82,11 +103,12 @@ NOTICE: Do not forget to perform UPDATE and UPGRADE, e.g.:
     apt full-upgrade
 EOF
 
-(( O_AUTORUN == 0 )) && cat << 'EOF'
+! ((O_AUTORUN)) \
+    && print ERR $'\e' << EOF
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Visit <https://free-pmx.pages.dev/tools/free-pmx-no-subscription/>
+Visit $NS_WEB
 for more details, to check the latest version or to report an issue.
 EOF
 
-exit $status
+exit $((status))

@@ -1,140 +1,189 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: Copyright 2025 free-pmx
 # SPDX-License-Identifier: AGPL-3.0-only
 
-source "/usr/lib/free-pmx/no-subscription-util" 2> /dev/null \
-|| { echo "Internal error, aborting." >&2; exit 1; }
+source "/usr/lib/free-pmx/no-subscription-util" \
+    || exit 255
 
 declare_common() {
 
-      declare -rg NS_CONFIG="/etc/free-pmx/no-subscription.conf"
+    : "${NS_WEB} ${NS_CONFIG}"
+
+    declare -rg NS_WEB="<https://free-pmx.pages.dev/tools/free-pmx-no-subscription/>"
+    declare -rg NS_CONFIG="/etc/free-pmx/no-subscription.conf"
 
 }
 
-declare_aptsrcs() {
+declare_ns_globals() {
 
-      declare -rg ORD_APTSRC_IDS=("pve" "pbs" "pmg" "ceph")
+    : "${APTSRC_ID_LIST} ${APTSRC_ID_TO_TARGET} ${APTSRC_TARGET_TO_ID} ${APTSRC_ID_TO_TEMPL}"
 
-      declare -A os_release
-      source_kv "/etc/os-release" os_release VERSION_ID VERSION_CODENAME \
-      && check_kv_allset os_release VERSION_ID VERSION_CODENAME \
-      || return 1
+    declare -rg APTSRC_ID_LIST=(pve pbs pmg ceph)
 
-      [[ ${os_release[VERSION_ID]} =~ ^[0-9]+$ ]] || return 1
-      declare -r formats=(sources list)
-      declare -rg APTSRC_FORMAT="${formats[(( os_release[VERSION_ID] < 13 ))]}"
+    declare -ra os_release_vars=(VERSION_ID VERSION_CODENAME)
+    declare -A os_release
+    source_kv "/etc/os-release" os_release "${os_release_vars[@]}" \
+        && check_kv_allset os_release "${os_release_vars[@]}" \
+        || return 1
 
-      declare -r list_d="/etc/apt/sources.list.d"
+    [[ ${os_release[VERSION_ID]} =~ ^[0-9]+$ ]] || return 1
+    declare -r ext_formats=(sources list)
+    declare -r ext="${ext_formats[((os_release[VERSION_ID] < 13))]}"
 
-      declare -rgA APTSRC_TARGETS=(
-            ["pve"]="$list_d/pve-enterprise.$APTSRC_FORMAT"
-            ["pbs"]="$list_d/pbs-enterprise.$APTSRC_FORMAT"
-            ["pmg"]="$list_d/pmg-enterprise.$APTSRC_FORMAT"
-            ["ceph"]="$list_d/ceph.$APTSRC_FORMAT"
-      )
+    declare -r aptsrc_d="/etc/apt/sources.list.d"
 
-      declare -r templ_d="/usr/share/free-pmx/no-subscription-aptsrcs"
+    declare -rgA APTSRC_ID_TO_TARGET=(
+        [pve]="$aptsrc_d/pve-enterprise.$ext"
+        [pbs]="$aptsrc_d/pbs-enterprise.$ext"
+        [pmg]="$aptsrc_d/pmg-enterprise.$ext"
+        [ceph]="$aptsrc_d/ceph.$ext"
+    )
 
-      declare -rgA APTSRC_TEMPLS=(
-            ["pve"]="$templ_d/pve-no-subscription.$APTSRC_FORMAT.template"
-            ["pbs"]="$templ_d/pbs-no-subscription.$APTSRC_FORMAT.template"
-            ["pmg"]="$templ_d/pmg-no-subscription.$APTSRC_FORMAT.template"
-            ["ceph"]="$templ_d/ceph-no-subscription.$APTSRC_FORMAT.template"
-      )
+    declare -gA APTSRC_TARGET_TO_ID=()
+    declare id
+    for id in "${!APTSRC_ID_TO_TARGET[@]}"; do APTSRC_TARGET_TO_ID[${APTSRC_ID_TO_TARGET[$id]}]="$id"; done
+    declare -rg APTSRC_TARGET_TO_ID
 
-      declare -rgx FREE_PMX_DEBIAN="${os_release[VERSION_CODENAME]}"
-      declare -rgx FREE_PMX_CEPH
+    declare -r templ_d="/usr/share/free-pmx/no-subscription-aptsrcs"
 
-      declare -rgx FREE_PMX_APTKEY_SHARE="/usr/share/keyrings/proxmox-archive-keyring.gpg"
-      declare -rgx FREE_PMX_APTKEY_LOCAL="/etc/apt/keyrings/proxmox-release-$FREE_PMX_DEBIAN.gpg"
-      declare -rgx FREE_PMX_APTKEY_ORIGIN="https://enterprise.proxmox.com/debian/proxmox-release-$FREE_PMX_DEBIAN.gpg"
+    declare -rgA APTSRC_ID_TO_TEMPL=(
+        [pve]="$templ_d/pve-no-subscription.$ext.template"
+        [pbs]="$templ_d/pbs-no-subscription.$ext.template"
+        [pmg]="$templ_d/pmg-no-subscription.$ext.template"
+        [ceph]="$templ_d/ceph-no-subscription.$ext.template"
+    )
+
+    declare -rgx FREE_PMX_DEBIAN="${os_release[VERSION_CODENAME]}"
+    declare -rgx FREE_PMX_CEPH
+
+    declare -rgx FREE_PMX_APTKEY_ORIGIN="https://enterprise.proxmox.com/debian/proxmox-release-$FREE_PMX_DEBIAN.gpg"
+    declare -rgx FREE_PMX_APTKEY_LOCAL="/etc/apt/keyrings/proxmox-release-$FREE_PMX_DEBIAN.gpg"
+
+    declare -rgx FREE_PMX_APTKEY=${FREE_PMX_APTKEY:-$FREE_PMX_APTKEY_LOCAL}
 
 }
 
-declare_patchdefs() {
+declare_nn_globals() {
 
-      declare -i err=0
+    : "${PATCHDEF_ID_PREFIX_LIST} ${PATCHDEF_TARGET_LIST} ${PATCHDEF_TARGET_TO_IDS} ${PATCHDEF_DIR}"
 
-      declare -rga AVAIL_PATCH_TARGETS=(
-            "/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"
-            "/usr/share/pve-manager/js/pvemanagerlib.js"
-            "/usr/share/pve-manager/touch/pvemanager-mobile.js"
-            "/usr/share/javascript/proxmox-backup/js/proxmox-backup-gui.js"
-            "/usr/share/javascript/pmg-gui/js/pmgmanagerlib.js"
-      )
+    declare -i err=0
 
-      declare -rg PATCHDEF_DIR="/usr/share/free-pmx/no-nag-patchdefs"
+    declare -rga PATCHDEF_ID_PREFIX_LIST=(pwt pve pbs pmg)
 
-      declare -ga ORD_PATCHDEF_IDS=()
-      declare -gA PATCHDEF_TARGETS
+    declare -ga PATCHDEF_TARGET_LIST=()
+    declare -gA PATCHDEF_TARGET_TO_IDS=()
 
-      for p in "${PATCHDEF_DIR}/"*.patchdef; do
+    declare -rg PATCHDEF_DIR="/usr/share/free-pmx/no-nag-patchdefs"
+
+    declare id_prefix patchdef
+    for id_prefix in "${PATCHDEF_ID_PREFIX_LIST[@]}"; do
+        for patchdef in "$PATCHDEF_DIR/$id_prefix"*.patchdef; do
             declare -A pd
-            source_kv "$p" pd TARGET || { err=$(( err | 1 )); continue; }
-            [ -z "${pd[TARGET]}" ] && { err=$(( err | 2 )); continue; }
+            source_kv "$patchdef" pd TARGET || {
+                ((err |= 1))
+                continue
+            }
+            [ -n "${pd[TARGET]}" ] || {
+                ((err |= 2))
+                continue
+            }
 
-            if [[ "$p" =~ ^${PATCHDEF_DIR}/(.*)\.patchdef ]]; then            
-                  declare m=${BASH_REMATCH[1]}
-                  ORD_PATCHDEF_IDS+=("$m")
-                  PATCHDEF_TARGETS["$m"]="${pd[TARGET]}" 
-            fi
-      done
+            [[ "$patchdef" =~ ^${PATCHDEF_DIR}/(.*)\.patchdef ]] && {
+                declare id=${BASH_REMATCH[1]}
+                [[ -v PATCHDEF_TARGET_TO_IDS[${pd[TARGET]}] ]] \
+                    || PATCHDEF_TARGET_LIST+=("${pd[TARGET]}")
+                PATCHDEF_TARGET_TO_IDS[${pd[TARGET]}]+="$id;"
+            }
+        done
+    done
 
-      declare -rg ORD_PATCHDEF_IDS
-      declare -rg PATCHDEF_TARGETS
+    declare -rg PATCHDEF_TARGET_LIST
+    declare -rg PATCHDEF_TARGET_TO_IDS
 
-      return $err
-
-}
-
-init() {
-
-      declare -r conf_opt_check="$1"
-      shift
-
-      declare_common
-
-      source "$NS_CONFIG" 2> /dev/null ||:
-
-      declare -gi O_AUTORUN=0
-      declare -g O_TARGET=''
-      declare -ga ARGS=()
-
-      declare -i opt_t_multiple=0
-      declare -i opt_invalid=0
-
-      while getopts ":at:" opt; do
-      case "$opt" in
-            a) O_AUTORUN=1;;
-            t) [[ -z $O_TARGET ]] || opt_t_multiple=1; O_TARGET=$OPTARG;;
-            *) opt_invalid=1;;
-      esac
-      done
-
-      case "${!conf_opt_check}" in
-      prohibit)
-            { echo "Prohibited by configuration: $NS_CONFIG" >&2; exit; };;
-      manual)
-            (( O_AUTORUN == 0 )) \
-            || { echo "Not configured to auto-run - option '$conf_opt_check': $NS_CONFIG" >&2; exit; };;
-      auto)
-            (( O_AUTORUN == 1 )) \
-            && echo "Automatic run.";;
-      *)
-            { echo "Configuration invalid or missing: $NS_CONFIG" >&2; exit 1; };;
-      esac
-
-      (( opt_t_multiple == 0 )) \
-      || { echo "Multiple '-t' options not supported."; exit 1; }
-      (( opt_invalid == 0 )) \
-      || { echo "Invalid command option." >&2; exit 1; }
-
-      { shift $((OPTIND-1)); while (($# > 0)); do ARGS+=("$1"); shift; done; }
-
-      declare -rg O_AUTORUN
-      declare -rg O_TARGET
-      declare -rg ARGS
+    return $((err))
 
 }
 
-run_rl_replace() { /usr/lib/free-pmx/repo-list-replace "$@"; }
-run_rk_check() { /usr/lib/free-pmx/repo-key-check "$@"; }
-run_pd_apply() { /usr/lib/free-pmx/patchdef-apply "$@"; }
+init_run() {
+
+    : "${O_AUTORUN} ${O_TARGET} ${ARGS}"
+
+    [[ -n $1 ]] && declare -r conf_opt_check="$1" || return 255
+    shift
+
+    declare_common
+
+    source "$NS_CONFIG" || :
+
+    declare -gi O_AUTORUN=0
+    declare -g O_TARGET=''
+    declare -ga ARGS=()
+    declare -i opt_invalid=0
+
+    while getopts ":at:" opt; do
+        case "$opt" in
+        a)
+            O_AUTORUN=1
+            ;;
+        t)
+            [[ -z $O_TARGET ]] || opt_invalid=1
+            O_TARGET=$OPTARG
+            [[ -n $O_TARGET ]] || opt_invalid=1
+            ;;
+        *)
+            opt_invalid=1
+            ;;
+        esac
+    done
+
+    declare -rg O_AUTORUN
+    declare -rg O_TARGET
+
+    ! ((opt_invalid)) || {
+        print ERR "Invalid command option(s)."
+        exit 1
+    }
+
+    shift $((OPTIND - 1))
+    while (($# > 0)); do
+        ARGS+=("$1")
+        shift
+    done
+
+    declare -rg ARGS
+
+    case "${!conf_opt_check}" in
+    prohibit)
+        print ERR "Prohibited by configuration: $NS_CONFIG"
+        exit 0
+        ;;
+    manual)
+        ! ((O_AUTORUN)) || {
+            print ERR "Not configured to auto-run - option '$conf_opt_check': $NS_CONFIG"
+            exit 0
+        }
+        ;;
+    auto)
+        ((O_AUTORUN)) && print OUT "Automatic run."
+        ;;
+    *)
+        print ERR "Configuration invalid or missing: $NS_CONFIG"
+        exit 1
+        ;;
+    esac
+
+}
+
+run_aptkey_check() {
+    /usr/lib/free-pmx/aptkey-check "$@"
+}
+
+run_aptsrc_replace() {
+    /usr/lib/free-pmx/aptsrc-replace "$@"
+}
+
+run_patchdef_apply() {
+    /usr/lib/free-pmx/patchdef-apply "$@"
+}
