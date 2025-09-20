@@ -3,7 +3,7 @@
 		    title: gettext('No Subscription'),
 		    iconCls: 'good fa-minus-circle',
 		    text: 'Non-production use. See DISCLAIMER.&nbsp;' +
-				'<a href="https://free-pmx.pages.dev/tools/free-pmx-no-subscription/#disclaimer" ' +
+				'<a href="https://free-pmx.org/tools/free-pmx-no-subscription/#disclaimer" ' +
 				'target="_blank"><i class="fa fa-external-link"></i></a>',
 		};
 		subs.setUserCls('');

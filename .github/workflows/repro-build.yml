@@ -25,9 +25,17 @@ jobs:
       uses: actions/checkout@v4
       with:
         path: repo
-    - name: Check if build is reproducible
+    - name: Check if build can be reproduced
       run: .github/repro-build/check-build >> $GITHUB_ENV
-    - name: Check if official package digest matches
+    - name: Check if published package checksum matches
       run: .github/repro-build/check-url >> $GITHUB_ENV
     - name: Report
+      if: always()
       run: .github/repro-build/report >> $GITHUB_STEP_SUMMARY
+    - name: Create working directory bundle artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        path: repo
+        include-hidden-files: true
+        retention-days: 1

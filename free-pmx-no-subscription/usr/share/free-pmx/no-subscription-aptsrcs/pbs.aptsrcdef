@@ -1,0 +1,11 @@
+# APT source definition for no-subscription
+
+DISABLE="/etc/apt/sources.list.d/pbs-enterprise.${FREE_PMX_APTEXT}"
+CREATE="/etc/apt/sources.list.d/pbs-no-subscription.${FREE_PMX_APTEXT}"
+
+FROM="deb.${FREE_PMX_APTEXT}.template"
+
+URI="http://download.proxmox.com/debian/pbs"
+SUITE=$FREE_PMX_DEBIAN
+COMPONENT=pbs-no-subscription
+KEY=$FREE_PMX_APTKEY

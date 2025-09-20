@@ -1,9 +1,0 @@
-Build yourself:
-
-    git clone https://github.com/free-pmx/free-pmx-no-subscription
-    dpkg-deb --build --root-owner-group free-pmx-no-subscription/free-pmx-no-subscription
-
-See also:
-
-- Download and install <https://free-pmx.pages.dev/tools/free-pmx-no-subscription/>
-- Companion post with more details <https://free-pmx.pages.dev/insights/no-subscription/>

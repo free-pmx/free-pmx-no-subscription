@@ -1,0 +1,25 @@
+name: Other
+description: |
+  Any other report, e.g. enhancement request, code review or general feedback.
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Freely-worded, but concise and specific titles are the best.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: Attachments can be added below.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+
+        ---
+
+        *Each filing is treated as a contribution.*
+
+        ### Thank you again for taking the time and effort to fill out this report.

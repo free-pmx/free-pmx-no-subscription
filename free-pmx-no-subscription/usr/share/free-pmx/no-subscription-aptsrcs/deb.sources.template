@@ -1,0 +1,7 @@
+# See: man no-subscription
+
+Types: deb
+URIs: __URI__
+Suites: __SUITE__
+Components: __COMPONENT__
+Signed-By: __KEY__

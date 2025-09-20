@@ -1,14 +1,12 @@
 Package: free-pmx-no-subscription
-Version: 0.3.0
+Version: 0.3.3
 Section: utils
 Priority: optional
 Architecture: all
 Maintainer: free-pmx <179050296+free-pmx@users.noreply.github.com>
-Description: No-subscription setup tool for Proxmox product suite
- Disables default (enterprise), sets up no-subscription repositories
- and fetches Proxmox release key. All Proxmox repositories ONLY.
- Eliminates 'No valid subscription' notice and related marketing artefacts
- through series of modular JavaScript patches with graceful failure mode.
- Full auto-setup during install. Configuration file for feature control.
+Description: No subscription setup tool for Proxmox suite
+ Sets up original 'no subscription' APT repositories with associated key.
+ Eliminates 'No valid subscription' notice and related marketing artefacts.
+ Auto-setup during install. Non-interactive configuration. Fails gracefully.
  Supported products: PVE, PBS, PMG
-Homepage: https://free-pmx.pages.dev
+Homepage: https://free-pmx.org

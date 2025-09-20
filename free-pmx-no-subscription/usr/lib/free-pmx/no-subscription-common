@@ -10,16 +10,21 @@ declare_common() {
 
     : "${NS_WEB} ${NS_CONFIG}"
 
-    declare -rg NS_WEB="<https://free-pmx.pages.dev/tools/free-pmx-no-subscription/>"
+    declare -rg NS_WEB="<https://free-pmx.org/tools/free-pmx-no-subscription/>"
     declare -rg NS_CONFIG="/etc/free-pmx/no-subscription.conf"
 
 }
 
 declare_ns_globals() {
 
-    : "${APTSRC_ID_LIST} ${APTSRC_ID_TO_TARGET} ${APTSRC_TARGET_TO_ID} ${APTSRC_ID_TO_TEMPL}"
+    : "${APTSRCDEF_ID_LIST} ${APTSRCDEF_ID_TO_TARGET} ${APTSRCDEF_TARGET_TO_ID} ${APTSRCDEF_DIR}"
 
-    declare -rg APTSRC_ID_LIST=(pve pbs pmg ceph)
+    declare -i err=0
+
+    declare -rg APTSRCDEF_ID_LIST=(pve pbs pmg ceph)
+
+    declare -gA APTSRCDEF_ID_TO_TARGET=()
+    declare -gA APTSRCDEF_TARGET_TO_ID=()
 
     declare -ra os_release_vars=(VERSION_ID VERSION_CODENAME)
     declare -A os_release
@@ -29,30 +34,8 @@ declare_ns_globals() {
 
     [[ ${os_release[VERSION_ID]} =~ ^[0-9]+$ ]] || return 1
     declare -r ext_formats=(sources list)
-    declare -r ext="${ext_formats[((os_release[VERSION_ID] < 13))]}"
 
-    declare -r aptsrc_d="/etc/apt/sources.list.d"
-
-    declare -rgA APTSRC_ID_TO_TARGET=(
-        [pve]="$aptsrc_d/pve-enterprise.$ext"
-        [pbs]="$aptsrc_d/pbs-enterprise.$ext"
-        [pmg]="$aptsrc_d/pmg-enterprise.$ext"
-        [ceph]="$aptsrc_d/ceph.$ext"
-    )
-
-    declare -gA APTSRC_TARGET_TO_ID=()
-    declare id
-    for id in "${!APTSRC_ID_TO_TARGET[@]}"; do APTSRC_TARGET_TO_ID[${APTSRC_ID_TO_TARGET[$id]}]="$id"; done
-    declare -rg APTSRC_TARGET_TO_ID
-
-    declare -r templ_d="/usr/share/free-pmx/no-subscription-aptsrcs"
-
-    declare -rgA APTSRC_ID_TO_TEMPL=(
-        [pve]="$templ_d/pve-no-subscription.$ext.template"
-        [pbs]="$templ_d/pbs-no-subscription.$ext.template"
-        [pmg]="$templ_d/pmg-no-subscription.$ext.template"
-        [ceph]="$templ_d/ceph-no-subscription.$ext.template"
-    )
+    declare -rgx FREE_PMX_APTEXT="${ext_formats[((os_release[VERSION_ID] < 13))]}"
 
     declare -rgx FREE_PMX_DEBIAN="${os_release[VERSION_CODENAME]}"
     declare -rgx FREE_PMX_CEPH
@@ -61,6 +44,26 @@ declare_ns_globals() {
     declare -rgx FREE_PMX_APTKEY_LOCAL="/etc/apt/keyrings/proxmox-release-$FREE_PMX_DEBIAN.gpg"
 
     declare -rgx FREE_PMX_APTKEY=${FREE_PMX_APTKEY:-$FREE_PMX_APTKEY_LOCAL}
+
+    declare -rg APTSRCDEF_DIR="/usr/share/free-pmx/no-subscription-aptsrcs"
+
+    declare id
+    for id in "${APTSRCDEF_ID_LIST[@]}"; do
+        declare -A asd
+        source_kv "$APTSRCDEF_DIR/$id.aptsrcdef" asd DISABLE || {
+            ((err |= 2))
+            continue
+        }
+        APTSRCDEF_ID_TO_TARGET[$id]="${asd[DISABLE]}"
+    done
+
+    declare id
+    for id in "${!APTSRCDEF_ID_TO_TARGET[@]}"; do APTSRCDEF_TARGET_TO_ID[${APTSRCDEF_ID_TO_TARGET[$id]}]="$id"; done
+
+    declare -rg APTSRCDEF_ID_TO_TARGET
+    declare -rg APTSRCDEF_TARGET_TO_ID
+
+    return $((err))
 
 }
 

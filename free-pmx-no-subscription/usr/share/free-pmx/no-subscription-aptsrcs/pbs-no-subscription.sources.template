@@ -1,7 +1,0 @@
-# See: man no-subscription
-
-Types: deb
-URIs: http://download.proxmox.com/debian/pbs
-Suites: FREE_PMX_DEBIAN
-Components: pbs-no-subscription
-Signed-By: FREE_PMX_APTKEY

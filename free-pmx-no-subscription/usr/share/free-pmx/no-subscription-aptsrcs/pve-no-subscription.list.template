@@ -1,3 +1,0 @@
-# See: man no-subscription
-
-deb [signed-by="FREE_PMX_APTKEY"] http://download.proxmox.com/debian/pve FREE_PMX_DEBIAN pve-no-subscription

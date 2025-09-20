@@ -1,0 +1,109 @@
+name: Bug
+description: |
+  Any malfunction, deficiency, unexpected or undocumented behaviour.
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Freely-worded, but concise and specific titles are the best.
+
+        ### Before you begin, please ...
+
+        - confirm the issue is not addressed on the [project homepage](https://free-pmx.org/tools/free-pmx-no-subscription/); and
+        - check if there is no existing [issue](/free-pmx/free-pmx-no-subscription/issues?q=is%3Aissue) about the same; and
+        - verify whether the problem is reproducible (e.g. with a *separate system*, *browser*, etc.) or environment-specific.
+
+        *Your effort spent on the above is highly valued.*
+  - type: checkboxes
+    id: acknowledgement
+    attributes:
+      label: Acknowledgement
+      options:
+        - label: I have done my best with the above checks.
+          required: true
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Tool affected
+      description: |
+        Package contains two separate tools:
+        - **NO-SUBSCRIPTION** sets up APT repositories;
+        - **NO-NAG** removes popup notice, etc.
+
+        Each tool shows a respective name header during run, including when automated.
+      options:
+        - N/A
+        - NO-SUBSCRIPTION
+        - NO-NAG
+    validations:
+      required: true
+  - type: checkboxes
+    id: system
+    attributes:
+      label: "System(s) affected"
+      description: |
+        Known host system(s) which exhibit the issue.
+      options:
+        - label: Proxmox Virtual Environment
+        - label: Proxmox Backup Server
+        - label: Proxmox Mail Gateway
+  - type: checkboxes
+    id: other
+    attributes:
+      label: "Other notable circumstances"
+      options:
+        - label: A *non-stock system install* (e.g. manual install on top of Debian).
+        - label: Issue presented itself *only after a system upgrade*.
+  - type: textarea
+    id: versions
+    attributes:
+      label: "Component versions"
+      description: |
+        Individual system component versions. If not applicable/available, state so instead.
+      placeholder: |
+        free-pmx-no-subscription/now 0.3.0 all [installed,local]
+        proxmox-widget-toolkit/stable,now 5.0.5 all [installed]
+        pve-manager/stable,now 9.0.3 all [installed]
+      render: shell
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        The output such as above can be obtained from a command-line interface (host shell, SSH):
+
+        ```
+        apt list free-pmx-no-subscription proxmox-widget-toolkit pve-manager proxmox-backup-server pmg-gui
+        ```
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: Paste related terminal output, if any.
+      placeholder: |
+        Automated tool runs - during install - also log its terminal output into:
+
+            /var/log/apt/term.log
+      render: shell
+  - type: markdown
+    attributes:
+      value: |
+        Large logs can be attached as files at the end.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What undesirable happens and what was expected instead?
+      placeholder: Attachments can be added below.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+
+        ---
+
+        *Each filing is treated as a contribution.*
+
+        ### Thank you again for taking the time and effort to fill out this report.

@@ -1,14 +1,12 @@
 #!/bin/bash
 
-exec 3>&1 1>&2
-trap 'echo "${BASH_SOURCE[0]##*/}: Error $? (l.$LINENO) - aborted."; exit 1;' ERR
+source "${BASH_SOURCE[0]%/*}"/util && init || exit 255
 
 [[ $CHECK_BUILD == "pass" ]]
-[[ $CHECK_URL == "pass" ]]
 
 cat >&3 << EOF
 
-## Build is reproducible
+## Build reproducibility confirmed
 
 ### Package
 *$DEB_PACKAGE*
@@ -16,32 +14,21 @@ cat >&3 << EOF
 ### Version
 *$DEB_VERSION*
 
-### Download
+### Checksum SHA256
 
-[$DEB_URL]($DEB_URL)
-
-Integrity checked as of: *$CHECK_URL_LAST*
-
-### Metadata
-
-\`\`\`
+$DEB_SHA256
 
 EOF
 
-cat >&3 "$DEB_INFO"
+[[ $CHECK_URL == "pass" ]]
 
 cat >&3 << EOF
-\`\`\`
 
-> [!TIP]
-> Download and verify package integrity by sourcing the metadata snippet above and:
-> \`\`\`
-> wget -nc -P /tmp "\$DEB_URL" && sha256sum -c <<< "\$DEB_SHA256 /tmp/\${DEB_URL##*/}"
-> \`\`\`
->
-> Install the downloaded package:
-> \`\`\`
-> apt install /tmp/\${DEB_URL##*/}
-> \`\`\`
+## Published package checksum verified
+
+### URL
+[$DEB_URL]($DEB_URL)
+
+*$CHECK_URL_LAST* Checksum matches that of the reproduced build.
 
 EOF

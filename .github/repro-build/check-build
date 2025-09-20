@@ -1,36 +1,31 @@
 #!/bin/bash
 
-exec 3>&1 1>&2
-trap 'echo "${BASH_SOURCE[0]##*/}: Error $? (l.$LINENO) - aborted."; exit 1;' ERR
+source "${BASH_SOURCE[0]%/*}"/util && init || exit 255
 
 out_dir=$(pwd -P)
-cd -P "$(dirname "${BASH_SOURCE[0]}")"
+repo_dir=${GIT_WORK_TREE:-$out_dir}
 
-p=$(pwd -P); unset build_meta_fname
-while [[ -z $build_meta_fname ]] && [[ $p != / ]]; do
-    p=$(realpath -s "$p"/..)
-    build_meta_fname=$(find "$p" -maxdepth 1 -mindepth 1 \
-        -type f -name '*.buildmeta' -printf "%f\n")
-done
+found_buildmeta=("$repo_dir"/*.buildmeta)
+((${#found_buildmeta[@]} == 1))
+buildmeta=${found_buildmeta[0]}
+[[ -f $buildmeta ]]
+buildmeta_fname=${buildmeta##*/}
 
-[[ -n $build_meta_fname ]]
-[[ $(wc -l <<< "$build_meta_fname") == 1 ]]
-
-target="${build_meta_fname%%.buildmeta}"
+target="${buildmeta_fname%%.buildmeta}"
 package=${target%%_*}
 version=${target#*_}
 
-./req-perms "$p/$package"
+(cd "$repo_dir" && source .permsrc || exit 1)
 
-source "$p/$build_meta_fname"
-
+source "$buildmeta"
 export SOURCE_DATE_EPOCH DPKG_DEB_COMPRESSOR_TYPE
+
 tmp_deb=$(mktemp "$package"_XXXXXX.deb)
-dpkg-deb --build --root-owner-group "$p/$package" "$tmp_deb"
+dpkg-deb --build --root-owner-group "$repo_dir/$package" "$tmp_deb"
 
 read -r deb_package deb_version <<< "$(
     dpkg-deb --show --showformat='${Package} ${Version}\n' \
-    "$tmp_deb"
+        "$tmp_deb"
 )"
 
 [[ $package == "$deb_package" ]]
@@ -49,6 +44,13 @@ DEB_INFO=$out_dir/$deb_info_fname
 
 EOF
 
+cat >> "$out_dir/$deb_info_fname" << EOF
+GIT_URL=$GIT_URL
+GIT_COMMIT=$GIT_COMMIT
+GIT_REF=$GIT_REF
+
+EOF
+
 tee "$out_dir/$deb_info_fname" >&3 << EOF
 DEB_PACKAGE=$deb_package
 DEB_VERSION=$deb_version
@@ -58,14 +60,6 @@ DEB_URL=$DEB_URL
 
 EOF
 
-cat >> "$out_dir/$deb_info_fname" << EOF
-GIT_URL=$GIT_URL
-GIT_COMMIT=$GIT_COMMIT
-GIT_REF=$GIT_REF
-
-EOF
-
 cat >&3 << EOF
 CHECK_BUILD=pass
-
 EOF

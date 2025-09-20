@@ -1,18 +1,15 @@
 #!/bin/bash
 
-exec 3>&1 1>&2
-trap 'echo "${BASH_SOURCE[0]##*/}: Error $? (l.$LINENO) - aborted."; exit 1;' ERR
+source "${BASH_SOURCE[0]%/*}"/util && init || exit 255
 
-cd -P "$(dirname "${BASH_SOURCE[0]}")"
-
-./req-apt wget
+req_apt wget
 
 tmp_deb=$(mktemp "/tmp/$DEB_PACKAGE"_XXXXXX.deb)
 wget --no-verbose -O "$tmp_deb" "$DEB_URL"
 sha256sum --check <<< "$DEB_SHA256  $tmp_deb"
 
 cat >&3 << EOF
-CHECK_URL_LAST=$(date)
-CHECK_URL=pass
+CHECK_URL_LAST=$(date --rfc-3339=seconds --utc)
 
+CHECK_URL=pass
 EOF

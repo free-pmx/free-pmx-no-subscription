@@ -99,6 +99,20 @@ check_kv_allset() {
 
 }
 
+apt_policy_match() {
+
+    [[ -n $1 ]] && declare -x uri=$1 || return 255
+    [[ -n $2 ]] && [[ -n $3 ]] && declare -x suite_component="$2/$3" || return 255
+
+    apt-cache policy | perl -ne '
+        print $1 and last if
+        /^\s([0-9]+ $ENV{uri} $ENV{suite_component} .*) Packages$/
+    '
+
+    ! ((PIPESTATUS[0] | PIPESTATUS[1])) || return 1
+
+}
+
 deb_last_le_version() {
 
     [[ -n $1 ]] && declare package=$1 || return 255
@@ -123,13 +137,22 @@ deb_last_le_version() {
 
 }
 
-subst_vars() {
+subst_props() {
 
-    [[ -n $1 ]] && declare -a vnames=("$@") || return 255
+    [[ -n $1 ]] && declare -n props && props=$1 && [[ ${props@a} == *A* ]] || return 255
+    [[ -n $2 ]] && declare -a pnames=("$@") || return 255
+
+    declare -a vnames=()
+    declare pname
+    for pname in "${pnames[@]}"; do
+        [[ -n $pname ]] || return 255
+        declare "__${pname}__"="${props[$pname]}"
+        vnames+=("__${pname}__")
+    done
 
     declare vname
-    for vname in "${vnames[@]}"; do export "${vname?}"; done
-    export SUBST_VNAMES="${vnames[*]}"
+    for vname in "${vnames[@]}"; do declare -x "$vname"; done
+    declare -x SUBST_VNAMES="${vnames[*]}"
 
     perl -pe '
         BEGIN {

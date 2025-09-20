@@ -1,0 +1,3 @@
+# See: man no-subscription
+
+deb [signed-by="__KEY__"] __URI__ __SUITE__ __COMPONENT__

@@ -21,7 +21,7 @@ triggered)
 
     for t in $2; do
 
-        if [[ -v APTSRC_TARGET_TO_ID[$t] ]]; then
+        if [[ -v APTSRCDEF_TARGET_TO_ID[$t] ]]; then
             no-subscription -at "$t" || echo "ISSUES reported: $1 $t" >&2
         elif [[ -v PATCHDEF_TARGET_TO_IDS[$t] ]]; then
             no-nag -at "$t" || echo "ISSUES reported: $1 $t" >&2

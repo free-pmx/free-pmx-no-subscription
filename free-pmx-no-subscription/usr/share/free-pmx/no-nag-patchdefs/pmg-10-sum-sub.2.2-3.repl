@@ -11,7 +11,7 @@
 		data.icon = 'minus-circle good';
 		data.message = `${gettext('No Subscription')}: ` +
 			'Non-production use. See DISCLAIMER.&nbsp;' +
-			'<a href="https://free-pmx.pages.dev/tools/free-pmx-no-subscription/#disclaimer" ' +
+			'<a href="https://free-pmx.org/tools/free-pmx-no-subscription/#disclaimer" ' +
 			'target="_blank"><i class="fa fa-external-link"></i></a>';
 		break;
 	    default:

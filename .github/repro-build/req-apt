@@ -1,9 +1,0 @@
-#!/bin/bash
-
-trap 'echo "${BASH_SOURCE[0]##*/}: Error $? (l.$LINENO) - aborted."; exit 1;' ERR
-
-(( $# > 0 ))
-
-export DEBIAN_FRONTEND=noninteractive
-apt-get -qq update
-apt-get -qqo Dpkg::Use-Pty=0 satisfy "$@"

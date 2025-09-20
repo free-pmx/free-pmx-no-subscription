@@ -1,3 +1,0 @@
-# See: man no-subscription
-
-deb [signed-by="FREE_PMX_APTKEY"] http://download.proxmox.com/debian/pbs FREE_PMX_DEBIAN pbs-no-subscription

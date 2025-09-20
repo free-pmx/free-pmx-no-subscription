@@ -22,7 +22,7 @@ declare_ns_globals || {
 
 declare -A todo_id_flags
 declare id
-for id in "${APTSRC_ID_LIST[@]}"; do todo_id_flags[$id]=0; done
+for id in "${APTSRCDEF_ID_LIST[@]}"; do todo_id_flags[$id]=0; done
 
 if [[ -n $O_TARGET ]]; then
     ((${#ARGS[@]} == 0)) || {
@@ -30,7 +30,7 @@ if [[ -n $O_TARGET ]]; then
         exit 1
     }
 
-    declare id="${APTSRC_TARGET_TO_ID[$O_TARGET]}"
+    declare id="${APTSRCDEF_TARGET_TO_ID[$O_TARGET]}"
     if [[ -n $id ]]; then
         print OUT "Explicit target recognised."
         todo_id_flags[$id]=1
@@ -41,7 +41,7 @@ if [[ -n $O_TARGET ]]; then
 elif ((${#ARGS[@]} > 0)); then
     declare arg
     for arg in "${ARGS[@]}"; do
-        [[ -v APTSRC_ID_TO_TARGET[$arg] ]] || {
+        [[ -v APTSRCDEF_ID_TO_TARGET[$arg] ]] || {
             print ERR "Invalid argument: $arg"
             exit 1
         }
@@ -51,15 +51,15 @@ elif ((${#ARGS[@]} > 0)); then
 else
     echo -n "Detecting default sources ..."
     declare id
-    for id in "${APTSRC_ID_LIST[@]}"; do
-        [[ -f ${APTSRC_ID_TO_TARGET[$id]} ]] && todo_id_flags[$id]=1 && echo -n " $id"
+    for id in "${APTSRCDEF_ID_LIST[@]}"; do
+        [[ -f ${APTSRCDEF_ID_TO_TARGET[$id]} ]] && todo_id_flags[$id]=1 && echo -n " $id"
     done
     echo
 fi
 
 declare -i todo_count=0 done_count=0
 declare id
-for id in "${APTSRC_ID_LIST[@]}"; do ((todo_count += todo_id_flags[$id])); done
+for id in "${APTSRCDEF_ID_LIST[@]}"; do ((todo_count += todo_id_flags[$id])); done
 
 if ((todo_count > 0)); then
     ((todo_id_flags[ceph])) && [[ -z $FREE_PMX_CEPH ]] && {
@@ -68,10 +68,10 @@ if ((todo_count > 0)); then
     }
 
     declare id
-    for id in "${APTSRC_ID_LIST[@]}"; do
+    for id in "${APTSRCDEF_ID_LIST[@]}"; do
         ((todo_id_flags[$id])) \
             && print OUT "Setting up for $id ..." \
-            && run_aptsrc_replace "${APTSRC_ID_TO_TARGET[$id]}" "${APTSRC_ID_TO_TEMPL[$id]}" \
+            && run_aptsrc_replace "$APTSRCDEF_DIR/$id.aptsrcdef" \
             && ((done_count++))
     done
     ((done_count == todo_count)) || ((status |= 1))

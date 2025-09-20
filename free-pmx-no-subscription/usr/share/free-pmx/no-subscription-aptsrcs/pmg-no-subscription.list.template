@@ -1,3 +1,0 @@
-# See: man no-subscription
-
-deb [signed-by="FREE_PMX_APTKEY"] http://download.proxmox.com/debian/pmg FREE_PMX_DEBIAN pmg-no-subscription
